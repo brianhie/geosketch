@@ -1,0 +1,9 @@
+data/mouse_brain/dropviz/Cerebellum_ALT
+data/mouse_brain/dropviz/Cortex_noRep5_FRONTALonly
+data/mouse_brain/dropviz/Cortex_noRep5_POSTERIORonly
+data/mouse_brain/dropviz/EntoPeduncular
+data/mouse_brain/dropviz/GlobusPallidus
+data/mouse_brain/dropviz/Hippocampus
+data/mouse_brain/dropviz/Striatum
+data/mouse_brain/dropviz/SubstantiaNigra
+data/mouse_brain/dropviz/Thalamus
