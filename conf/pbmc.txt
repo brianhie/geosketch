@@ -1,0 +1,9 @@
+data/pbmc/10x/68k_pbmc
+data/pbmc/10x/b_cells
+data/pbmc/10x/cd14_monocytes
+data/pbmc/10x/cd4_t_helper
+data/pbmc/10x/cd56_nk
+data/pbmc/10x/cytotoxic_t
+data/pbmc/10x/memory_t
+data/pbmc/10x/regulatory_t
+data/pbmc/pbmc_10X
