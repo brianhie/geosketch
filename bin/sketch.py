@@ -38,7 +38,6 @@ def reduce_dimensionality(X, method='svd', dimred=DIMRED):
     else:
         sys.stderr.write('ERROR: Unknown method {}.'.format(svd))
         exit(1)
-    
 
 def test(X_dimred, name, kmeans=True, visualize_orig=True,
          downsample=True, n_downsample=100000, perplexity=500):
@@ -50,7 +49,6 @@ def test(X_dimred, name, kmeans=True, visualize_orig=True,
         log('K-means...')
         km = KMeans(n_clusters=10, n_jobs=10, verbose=0)
         km.fit(X_dimred)
-        names = np.array([ str(x) for x in sorted(set(km.labels_)) ])
         np.savetxt('data/cell_labels/{}.txt'.format(name), km.labels_)
     
     cell_labels = (
@@ -77,24 +75,25 @@ def test(X_dimred, name, kmeans=True, visualize_orig=True,
      
          embedding = visualize(
              [ X_dimred[idx, :] ], cell_labels[idx],
-             NAMESPACE + '_orig{}'.format(len(idx)), cell_types,
+             name + '_orig{}'.format(len(idx)), cell_types,
              perplexity=perplexity, n_iter=400, image_suffix='.png'
          )
          np.savetxt('data/embedding_{}.txt'.format(name), embedding)
-    
+
     # Downsample while preserving structure and visualize.
 
-    Ns = [ 1000, 10000, 20000, 50000 ]
+    Ns = [ 1000, 5000, 10000, 20000, 50000 ]
 
     for N in Ns:
         if N >= X_dimred.shape[0]:
             continue
-        
+
         log('SRS {}...'.format(N))
         srs_idx = srs(X_dimred, N)
+        log('Found {} entries'.format(len(set(srs_idx))))
 
         log('Visualizing sampled...')
         visualize([ X_dimred[srs_idx, :] ], cell_labels[srs_idx],
-                  NAMESPACE + '_srs{}'.format(N), cell_types,
-                  perplexity=50, n_iter=500, size=max(int(15000/N), 1),
+                  name + '_srs{}'.format(N), cell_types,
+                  perplexity=(N/200), n_iter=500, size=max(int(20000/N), 1),
                   image_suffix='.png')

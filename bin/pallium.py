@@ -1,4 +1,5 @@
 import numpy as np
+import os
 from scanorama import *
 from scipy.sparse import vstack
 
@@ -25,6 +26,6 @@ if __name__ == '__main__':
         X_dimred = X_dimred.toarray()
     log('Dimensionality = {}'.format(X_dimred.shape[1]))
 
-    test(X_dimred, 'pallium', kmeans=False, visualize_orig=False)
+    test(X_dimred, NAMESPACE, kmeans=False, visualize_orig=False)
     
     log('Done.')
