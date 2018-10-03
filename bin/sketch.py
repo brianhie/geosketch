@@ -1,7 +1,13 @@
 from fbpca import pca
 import numpy as np
+import os
+from scanorama import visualize
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import normalize, LabelEncoder
 from sklearn.random_projection import SparseRandomProjection as JLSparse
 import sys
+
+from utils import log
 
 DIMRED = 100
 
@@ -33,3 +39,62 @@ def reduce_dimensionality(X, method='svd', dimred=DIMRED):
         sys.stderr.write('ERROR: Unknown method {}.'.format(svd))
         exit(1)
     
+
+def test(X_dimred, name, kmeans=True, visualize_orig=True,
+         downsample=True, n_downsample=100000, perplexity=500):
+
+    # Assign cells to clusters.
+
+    if kmeans or \
+       not os.path.isfile('data/cell_labels/{}.txt'.format(name)):
+        log('K-means...')
+        km = KMeans(n_clusters=10, n_jobs=10, verbose=0)
+        km.fit(X_dimred)
+        names = np.array([ str(x) for x in sorted(set(km.labels_)) ])
+        np.savetxt('data/cell_labels/{}.txt'.format(name), km.labels_)
+    
+    cell_labels = (
+        open('data/cell_labels/{}.txt'.format(name))
+        .read().rstrip().split()
+    )
+    le = LabelEncoder().fit(cell_labels)
+    cell_labels = le.transform(cell_labels)
+    cell_types = le.classes_
+
+    # Visualize original data.
+    
+    if visualize_orig:
+         log('Visualizing original...')
+     
+         if downsample:
+             log('Visualization will downsample to {}...'
+                 .format(n_downsample))
+             idx = np.random.choice(
+                 X_dimred.shape[0], size=n_downsample, replace=False
+             )
+         else:
+             idx = range(X_dimred.shape[0])
+     
+         embedding = visualize(
+             [ X_dimred[idx, :] ], cell_labels[idx],
+             NAMESPACE + '_orig{}'.format(len(idx)), cell_types,
+             perplexity=perplexity, n_iter=400, image_suffix='.png'
+         )
+         np.savetxt('data/embedding_{}.txt'.format(name), embedding)
+    
+    # Downsample while preserving structure and visualize.
+
+    Ns = [ 1000, 10000, 20000, 50000 ]
+
+    for N in Ns:
+        if N >= X_dimred.shape[0]:
+            continue
+        
+        log('SRS {}...'.format(N))
+        srs_idx = srs(X_dimred, N)
+
+        log('Visualizing sampled...')
+        visualize([ X_dimred[srs_idx, :] ], cell_labels[srs_idx],
+                  NAMESPACE + '_srs{}'.format(N), cell_types,
+                  perplexity=50, n_iter=500, size=max(int(15000/N), 1),
+                  image_suffix='.png')

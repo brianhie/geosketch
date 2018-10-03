@@ -5,7 +5,7 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import normalize, LabelEncoder
 
 from process import load_names
-from sketch import srs, reduce_dimensionality
+from sketch import srs, reduce_dimensionality, test
 from utils import log
 
 NAMESPACE = 'pancreas'
@@ -31,28 +31,7 @@ if __name__ == '__main__':
     datasets_dimred, genes = process_data(datasets, genes)
     datasets_dimred = assemble(datasets_dimred)
     X_dimred = np.concatenate(datasets_dimred)
-    
-    cell_labels = (
-        open('data/cell_labels/pancreas_cluster.txt')
-        .read().rstrip().split()
-    )
-    le = LabelEncoder().fit(cell_labels)
-    cell_labels = le.transform(cell_labels)
-    cell_types = le.classes_
 
-    log('Visualizing full...')
-    visualize([ X_dimred ], cell_labels,
-              NAMESPACE + '_original', cell_types,
-              perplexity=100, n_iter=400,
-              image_suffix='.png')
-    
-    log('SRS...')
-    srs_idx = srs(X_dimred, N)
-
-    log('Visualizing sampled...')
-    visualize([ X_dimred[srs_idx, :] ], cell_labels[srs_idx],
-              NAMESPACE + '_srs', cell_types,
-              perplexity=50, n_iter=400, size=40,
-              image_suffix='.png')
+    test(X_dimred, 'pancreas')
 
     log('Done.')
