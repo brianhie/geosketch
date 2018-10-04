@@ -27,13 +27,13 @@ if __name__ == '__main__':
     else:
         X_dimred = np.loadtxt('data/dimred_{}.txt'.format(NAMESPACE))
 
-    from sketch import srs, centroid_label
-    srs_idx = srs(X_dimred, 2000)
+    from sketch import srs, label_exact, label_approx
+    srs_idx = srs(X_dimred, 100)
+    X_srs = X_dimred[srs_idx, :]
     kmeans_k = 5
-    km = KMeans(n_clusters=kmeans_k, n_jobs=10, verbose=0)
-    km.fit(X_dimred[srs_idx, :])
-    cell_labels = centroid_label(X_dimred, km.cluster_centers_,
-                                 range(kmeans_k))
+    km = KMeans(n_clusters=kmeans_k, n_jobs=10, n_init=100, verbose=0)
+    km.fit(X_srs)
+    cell_labels = label_approx(X_dimred, X_srs, km.labels_)
     cell_types = [ str(k) for k in range(kmeans_k) ]
     visualize(
         [ X_dimred ], cell_labels,
@@ -41,6 +41,7 @@ if __name__ == '__main__':
         perplexity=50, n_iter=400, image_suffix='.png'
     )
 
+    exit()
     #experiment_efficiency_kmeans(X_dimred, labels)
     experiment_srs(X_dimred, NAMESPACE, kmeans_k=50)
     

@@ -70,13 +70,14 @@ def load_h5(fname, genome='mm10'):
 
             n_genes, n_cells = dsets['shape']
             data = dsets['data']
+            
             if dsets['data'].dtype == np.dtype('int32'):
                 data = dsets['data'].view('float32')
                 data[:] = dsets['data']
 
             X = csr_matrix((data, dsets['indices'], dsets['indptr']),
                            shape=(n_cells, n_genes))
-            genes = [ gene for gene in dsets['genes'].astype(str) ]
+            genes = [ gene for gene in dsets['gene_names'].astype(str) ]
             assert(len(genes) == n_genes)
             assert(len(genes) == X.shape[1])
             

@@ -1,3 +1,4 @@
+from annoy import AnnoyIndex
 import numpy as np
 import sys
 
@@ -17,17 +18,39 @@ def srs(X, N, seed=None):
 
     return srs_idx
 
-def centroid_label(X, centroids, centroid_labels):
-    assert(X.shape[1] == centroids.shape[1])
+def label_exact(X, sites, site_labels):
+    assert(sites.shape[0] > 0)
+    assert(X.shape[1] == sites.shape[1])
 
     labels = []
     for i in range(X.shape[0]):
-        min_centroid = None
+        nearest_site = None
         min_dist = None
-        for j in range(centroids.shape[0]):
-            dist = np.sum((X[i, :] - centroids[j, :])**2)
+        for j in range(sites.shape[0]):
+            dist = np.sum((X[i, :] - sites[j, :])**2)
             if min_dist is None or dist < min_dist:
-                min_centroid = j
-                dist = min_dist
-            labels.append(centroid_labels[min_centroid])
+                nearest_site = j
+                min_dist = dist
+        assert(not nearest_site is None)
+        labels.append(site_labels[nearest_site])
+    return np.array(labels)
+
+def label_approx(X, sites, site_labels):
+    assert(X.shape[1] == sites.shape[1])
+
+    # Build index over site points.
+    aindex = AnnoyIndex(sites.shape[1], metric='euclidean')
+    for i in range(sites.shape[0]):
+        aindex.add_item(i, sites[i, :])
+    aindex.build(10)
+
+    labels = []
+    for i in range(X.shape[0]):
+        # Find nearest site point.
+        nearest_site = aindex.get_nns_by_vector(X[i, :], 1)
+        if len(nearest_site) < 1:
+            labels.append(None)
+            continue
+        labels.append(site_labels[nearest_site[0]])
+        
     return np.array(labels)

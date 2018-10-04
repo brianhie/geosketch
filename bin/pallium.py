@@ -28,6 +28,18 @@ if __name__ == '__main__':
     else:
         X_dimred = np.loadtxt('data/dimred_{}.txt'.format(NAMESPACE))
 
-    experiment_srs(X_dimred, NAMESPACE, kmeans=False, visualize_orig=False)
+    viz_genes = [
+        'Gja1', 'Flt1', 'Gabra6', 'Syt1', 'Gabrb2', 'Gabra1',
+        'Meg3', 'Mbp', 'Rgs5', 'Pcp2', 'Dcn', 'Pvalb', 'Nnat',
+        'C1qb', 'Acta2', 'Syt6', 'Lhx1', 'Sox4', 'Tshz2', 'Cplx3'
+        'Shisa8', 'Fibcd1', 'Drd1', 'Otof', 'Chat', 'Th', 'Rora',
+        'Synpr', 'Cacng4', 'Ttr', 'Gpr37', 'C1ql3', 'Fezf2'
+    ]
+
+    experiment_srs(X_dimred, NAMESPACE,
+                   gene_names=viz_genes, genes=genes,
+                   gene_expr=vstack(datasets),
+                   #visualize_orig=False,
+                   kmeans=False)
     
     log('Done.')

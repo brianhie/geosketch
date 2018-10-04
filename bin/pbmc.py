@@ -31,14 +31,11 @@ if __name__ == '__main__':
     datasets_dimred, genes = process_data(datasets, genes)
     datasets_dimred = assemble(datasets_dimred)
     X_dimred = np.concatenate(datasets_dimred)
-    #log('Dimension reduction with {}...'.format(METHOD))
-    #X = vstack(datasets)
-    #X_dimred = reduce_dimensionality(X, method=METHOD, dimred=DIMRED)
-    #if METHOD == 'jl_sparse':
-    #    X_dimred = X_dimred.toarray()
-    #log('Dimensionality = {}'.format(X_dimred.shape[1]))
 
     experiment_srs(X_dimred, NAMESPACE, perplexity=100,
-                   kmeans=False, visualize_orig=False)
+                   gene_names=viz_genes, genes=genes,
+                   gene_expr=vstack(datasets),
+                   #visualize_orig=False,
+                   kmeans=False)
 
     log('Done.')
