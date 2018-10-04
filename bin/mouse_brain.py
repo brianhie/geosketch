@@ -6,8 +6,8 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import normalize, LabelEncoder
 
 from process import load_names
-from sketch import srs, reduce_dimensionality, test
-from utils import log
+from experiments import *
+from utils import *
 
 np.random.seed(0)
 
@@ -47,6 +47,7 @@ if __name__ == '__main__':
     #    X_dimred = X_dimred.toarray()
     #log('Dimensionality = {}'.format(X_dimred.shape[1]))
 
-    test(X_dimred, NAMESPACE, perplexity=1200)
+    experiment_srs(X_dimred, NAMESPACE, perplexity=1200,
+                   visualize_orig=False, kmeans=False)
 
     log('Done.')

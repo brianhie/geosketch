@@ -4,8 +4,8 @@ from scanorama import *
 from scipy.sparse import vstack
 
 from process import load_names
-from sketch import reduce_dimensionality, test
-from utils import log
+from experiments import *
+from utils import *
 
 NAMESPACE = 'pbmc'
 METHOD = 'svd'
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     #    X_dimred = X_dimred.toarray()
     #log('Dimensionality = {}'.format(X_dimred.shape[1]))
 
-    test(X_dimred, NAMESPACE, perplexity=100,
-         kmeans=False, visualize_orig=False)
+    experiment_srs(X_dimred, NAMESPACE, perplexity=100,
+                   kmeans=False, visualize_orig=False)
 
     log('Done.')

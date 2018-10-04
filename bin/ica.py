@@ -4,8 +4,8 @@ from scanorama import *
 from scipy.sparse import vstack
 
 from process import load_names
-from sketch import reduce_dimensionality, test
-from utils import log
+from experiments import *
+from utils import *
 
 np.random.seed(0)
 
@@ -31,13 +31,7 @@ if __name__ == '__main__':
     else:
         X_dimred = np.loadtxt('data/dimred_{}.txt'.format(NAMESPACE))
 
-    #log('Dimension reduction with {}...'.format(METHOD))
-    #X = vstack(datasets)
-    #X_dimred = reduce_dimensionality(X, method=METHOD, dimred=DIMRED)
-    #if METHOD == 'jl_sparse':
-    #    X_dimred = X_dimred.toarray()
-    #log('Dimensionality = {}'.format(X_dimred.shape[1]))
-
-    test(X_dimred, NAMESPACE, perplexity=1000)
+    experiment_srs(X_dimred, NAMESPACE, perplexity=1000,
+                   visualize_orig=False, kmeans=False)
     
     log('Done.')

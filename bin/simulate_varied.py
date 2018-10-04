@@ -1,60 +1,47 @@
-import datetime
+import numpy as np
+import os
 from scanorama import *
 from scipy.sparse import vstack
-from sklearn.cluster import KMeans
-from sklearn.preprocessing import normalize, LabelEncoder
 
 from process import load_names
-from sketch import srs, reduce_dimensionality
-from utils import log
+from experiments import *
+from utils import *
 
 NAMESPACE = 'simulate_varied'
 METHOD = 'svd'
 DIMRED = 100
-N = 10000
-
-NAMESPACE += '_{}{}_N{}'.format(METHOD, DIMRED, N)
 
 data_names = [ 'data/simulate/simulate_varied' ]
 
 if __name__ == '__main__':
-    datasets, genes_list, n_cells = load_names(data_names)
-    datasets = [ normalize(ds, axis=1) for ds in datasets ]
+    if not os.path.isfile('data/dimred_{}.txt'.format(NAMESPACE)):
+        datasets, genes_list, n_cells = load_names(data_names)
+        datasets, genes = merge_datasets(datasets, genes_list)
+        log('Dimension reduction with {}...'.format(METHOD))
+        X = vstack(datasets)
+        X_dimred = reduce_dimensionality(X, method=METHOD, dimred=DIMRED)
+        if METHOD == 'jl_sparse':
+            X_dimred = X_dimred.toarray()
+        log('Dimensionality = {}'.format(X_dimred.shape[1]))
+        np.savetxt('data/dimred_{}.txt'.format(NAMESPACE), X_dimred)
+    else:
+        X_dimred = np.loadtxt('data/dimred_{}.txt'.format(NAMESPACE))
 
-    log('Dimension reduction...')
-    X = vstack(datasets)
-    X_dimred = reduce_dimensionality(X, method=METHOD, dimred=DIMRED)
-    if METHOD == 'jl_sparse':
-        X_dimred = X_dimred.toarray()
-    log('Dimensionality = {}'.format(X_dimred.shape[1]))
-
-    #log('K-means...')
-    #km = KMeans(n_clusters=10, n_jobs=10, verbose=0)
-    #km.fit(X_dimred)
-    #names = np.array([ str(x) for x in sorted(set(km.labels_)) ])
-    #np.savetxt('data/cell_labels/{}.txt'.format(NAMESPACE),
-    #           km.labels_)
-
-    cell_labels = (
-        open('data/cell_labels/simulate_varied.txt')
-        .read().rstrip().split()
+    from sketch import srs, centroid_label
+    srs_idx = srs(X_dimred, 2000)
+    kmeans_k = 5
+    km = KMeans(n_clusters=kmeans_k, n_jobs=10, verbose=0)
+    km.fit(X_dimred[srs_idx, :])
+    cell_labels = centroid_label(X_dimred, km.cluster_centers_,
+                                 range(kmeans_k))
+    cell_types = [ str(k) for k in range(kmeans_k) ]
+    visualize(
+        [ X_dimred ], cell_labels,
+        NAMESPACE + '_cl', cell_types,
+        perplexity=50, n_iter=400, image_suffix='.png'
     )
-    le = LabelEncoder().fit(cell_labels)
-    cell_labels = le.transform(cell_labels)
-    cell_types = le.classes_
-    
-    log('Visualizing original...')
-    visualize([ X_dimred ], cell_labels, NAMESPACE + '_original',
-              cell_types, perplexity=10, n_iter=500, image_suffix='.png',
-              size=20)
 
-    log('SRS...')
-    srs_idx = srs(X_dimred, N)
+    #experiment_efficiency_kmeans(X_dimred, labels)
+    experiment_srs(X_dimred, NAMESPACE, kmeans_k=50)
     
-    log('Visualizing sampled...')
-    X_twoD = X_dimred[:, range(2)]
-    visualize([ X_dimred[srs_idx, :] ], cell_labels[srs_idx],
-              NAMESPACE + '_srs', cell_types,
-              perplexity=10, n_iter=500, image_suffix='.png', size=40)
-
     log('Done.')
