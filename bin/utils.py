@@ -9,6 +9,7 @@ DIMRED = 100
 def log(string):
     sys.stdout.write(str(datetime.datetime.now()) + ' | ')
     sys.stdout.write(string + '\n')
+    sys.stdout.flush()
 
 def reduce_dimensionality(X, method='svd', dimred=DIMRED):
     if method == 'svd':

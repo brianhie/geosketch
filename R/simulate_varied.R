@@ -33,9 +33,15 @@ splatSimBatchEffects <- function(sim, params) {
 }
 
 sim.groups <- splatSimulate(
-    batchCells = c(111110),
-    group.prob = (c(100000, 10000, 1000, 100, 10) / 111110),
+    batchCells = c(111100),
+    group.prob = (c(100000, 10000, 1000, 100) / 111100),
     method = "groups", verbose = FALSE
 )
-write.table(counts(sim.groups), '../data/simulate/simulate_varied.txt')
+
+write.table(counts(sim.groups), '../data/simulate/simulate_varied.txt',
+            quote=FALSE, sep='\t')
+
+write.table(colData(sim.groups),
+            '../data/cell_labels/simulate_varied_cluster.txt',
+            quote=FALSE, sep='\t')
 

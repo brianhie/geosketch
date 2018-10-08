@@ -18,6 +18,12 @@ def srs(X, N, seed=None):
 
     return srs_idx
 
+def label(X, sites, site_labels, approx=True):
+    if approx:
+        return label_approx(X, sites, site_labels)
+    else:
+        return label_exact(X, sites, site_labels)
+
 def label_exact(X, sites, site_labels):
     assert(sites.shape[0] > 0)
     assert(X.shape[1] == sites.shape[1])

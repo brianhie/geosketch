@@ -32,6 +32,16 @@ if __name__ == '__main__':
     datasets_dimred = assemble(datasets_dimred)
     X_dimred = np.concatenate(datasets_dimred)
 
+    viz_genes = [
+        'CD14', 'PTPRC', 'FCGR3A', 'ITGAX', 'ITGAM', 'CD19', 'HLA-DRB1',
+        'FCGR2B', 'FCGR2A', 'CD3E', 'CD4', 'CD8A','CD8B', 'CD28', 'CD8',
+        'TBX21', 'IKAROS', 'IL2RA', 'CD44', 'SELL', 'CCR7', 'MS4A1',
+        'CD68', 'CD163', 'IL5RA', 'SIGLEC8', 'KLRD1', 'NCR1', 'CD22',
+        'IL3RA', 'CCR6', 'IL7R', 'CD27', 'FOXP3', 'PTCRA', 'ID3', 'PF4',
+        'CCR10', 'SIGLEC7', 'NKG7', 'S100A8', 'CXCR3', 'CCR5', 'CCR3',
+        'CCR4', 'PTGDR2', 'RORC'
+    ]
+
     experiment_srs(X_dimred, NAMESPACE, perplexity=100,
                    gene_names=viz_genes, genes=genes,
                    gene_expr=vstack(datasets),

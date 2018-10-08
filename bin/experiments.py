@@ -8,19 +8,18 @@ import sys
 from sketch import *
 from utils import *
 
-def experiment_efficiency_kmeans(X_dimred, cluster_labels,
-                                 verbose=True):
-
+def experiment_efficiency_kmeans(X_dimred, cluster_labels):
     log('k-means clustering efficiency experiment...')
     
     cluster_labels = np.array(cluster_labels)
     k_c_e = {}
-    kmeans_ks = [ 3, 5, 10, 20, 30, 50, 100 ]
+    kmeans_ks = [ 5, 10, 20, 30, 40, 50, 100 ]
     
     for kmeans_k in kmeans_ks:
         log('k = {}'.format(kmeans_k))
 
-        km = KMeans(n_clusters=kmeans_k, n_jobs=10, verbose=0)
+        km = KMeans(n_clusters=kmeans_k, n_init=100,
+                    n_jobs=40, verbose=0)
         km.fit(X_dimred)
 
         clusters = sorted(set(cluster_labels))
@@ -37,9 +36,60 @@ def experiment_efficiency_kmeans(X_dimred, cluster_labels,
 
         k_c_e[kmeans_k] = cluster_to_efficiency
 
+    for k in sorted(k_c_e.keys()):
+        print('k = {}'.format(k))
+        for c in sorted(k_c_e[k].keys()):
+            print('\tcluster = {}, efficiency = {}'
+                  .format(c, k_c_e[k][c]))
+
     log('k-means clustering efficiency experiment done.')
 
     return k_c_e
+
+def experiment_efficiency_louvain(X_dimred, cluster_labels):
+    from anndata import AnnData
+    import scanpy.api as sc
+
+    log('Louvain clustering efficiency experiment...')
+
+    adata = AnnData(X=X_dimred)
+    sc.pp.neighbors(adata, use_rep='X')
+    
+    cluster_labels = np.array(cluster_labels)
+    r_c_e = {}
+    resolutions = [ 0.5, 1, 1.5, 2, 5, 10, 20, 100 ]
+    
+    for resolution in resolutions:
+        log('resolution = {}'.format(resolution))
+
+        sc.tl.louvain(adata, resolution=resolution,
+                      key_added='louvain')
+        louvain_labels = np.array(adata.obs['louvain'].tolist())
+
+        clusters = sorted(set(cluster_labels))
+    
+        log('Found {} clusters'.format(len(clusters)))
+        log('Calculating cluster efficiencies for resolution = {}'
+            .format(resolution))
+
+        cluster_to_efficiency = {}
+        for cluster in clusters:
+            efficiency = cluster_efficiency(
+                cluster, cluster_labels, louvain_labels
+            )
+            cluster_to_efficiency[cluster] = efficiency
+
+        r_c_e[resolution] = cluster_to_efficiency
+
+    for r in sorted(r_c_e.keys()):
+        print('resolution = {}'.format(r))
+        for c in sorted(r_c_e[r].keys()):
+            print('\tcluster = {}, efficiency = {}'
+                  .format(c, r_c_e[r][c]))
+
+    log('Louvain clustering efficiency experiment done.')
+
+    return r_c_e
 
 # Clustering-based downsampling efficiency.
 def cluster_efficiency(cluster, cluster_labels, auto_labels):
@@ -94,7 +144,7 @@ def experiment_srs(X_dimred, name, kmeans=True, visualize_orig=True,
     if visualize_orig:
         log('Visualizing original...')
      
-        if downsample:
+        if downsample and X_dimred.shape[0] > n_downsample:
             log('Visualization will downsample to {}...'
                 .format(n_downsample))
             idx = np.random.choice(
@@ -107,6 +157,8 @@ def experiment_srs(X_dimred, name, kmeans=True, visualize_orig=True,
            not gene_expr is None and \
            not genes is None:
             expr = gene_expr[idx, :]
+        else:
+            expr = None
      
         embedding = visualize(
             [ X_dimred[idx, :] ], cell_labels[idx],
@@ -134,6 +186,8 @@ def experiment_srs(X_dimred, name, kmeans=True, visualize_orig=True,
            not gene_expr is None and \
            not genes is None:
             expr = gene_expr[srs_idx, :]
+        else:
+            expr = None
 
         visualize([ X_dimred[srs_idx, :] ], cell_labels[srs_idx],
                   name + '_srs{}'.format(N), cell_types,
