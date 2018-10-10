@@ -36,10 +36,11 @@ if __name__ == '__main__':
     cell_labels = le.transform(cell_labels)
 
     experiment_efficiency_louvain(X_dimred, cell_labels)
-    
+
     experiment_efficiency_kmeans(X_dimred, cell_labels)
 
-    experiment_srs(X_dimred, NAMESPACE, kmeans=False,
-                   perplexity=50, n_downsample=X_dimred.shape[0])
+    experiment_srs(X_dimred, NAMESPACE, cell_labels=cell_labels,
+                   kmeans=False, perplexity=50,
+                   n_downsample=X_dimred.shape[0])
 
     log('Done.')

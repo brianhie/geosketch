@@ -7,6 +7,7 @@ import sys
 DIMRED = 100
 
 def log(string):
+    string = str(string)
     sys.stdout.write(str(datetime.datetime.now()) + ' | ')
     sys.stdout.write(string + '\n')
     sys.stdout.flush()

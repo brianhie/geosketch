@@ -52,23 +52,26 @@ def experiment_efficiency_louvain(X_dimred, cluster_labels):
 
     log('Louvain clustering efficiency experiment...')
 
+    cluster_labels = np.array(cluster_labels)
+
     adata = AnnData(X=X_dimred)
     sc.pp.neighbors(adata, use_rep='X')
-    
-    cluster_labels = np.array(cluster_labels)
+
     r_c_e = {}
-    resolutions = [ 0.5, 1, 1.5, 2, 5, 10, 20, 100 ]
-    
+    resolutions = [ 0.1, 0.5, 1, 1.5, 2, 5 ]
+
     for resolution in resolutions:
         log('resolution = {}'.format(resolution))
 
         sc.tl.louvain(adata, resolution=resolution,
                       key_added='louvain')
         louvain_labels = np.array(adata.obs['louvain'].tolist())
+        log(type(louvain_labels))
+        log(len(louvain_labels))
 
         clusters = sorted(set(cluster_labels))
     
-        log('Found {} clusters'.format(len(clusters)))
+        log('Found {} clusters'.format(len(set(louvain_labels))))
         log('Calculating cluster efficiencies for resolution = {}'
             .format(resolution))
 
@@ -117,7 +120,8 @@ def cluster_efficiency(cluster, cluster_labels, auto_labels):
     # Divide weighted sum by number of samples in the cluster.
     return float(wsum) / float(sum(n_cluster_in_auto))
 
-def experiment_srs(X_dimred, name, kmeans=True, visualize_orig=True,
+def experiment_srs(X_dimred, name, cell_labels=None,
+                   kmeans=True, visualize_orig=True,
                    downsample=True, n_downsample=100000,
                    gene_names=None, gene_expr=None, genes=None,
                    perplexity=500, kmeans_k=10):
@@ -130,14 +134,17 @@ def experiment_srs(X_dimred, name, kmeans=True, visualize_orig=True,
         km = KMeans(n_clusters=kmeans_k, n_jobs=10, verbose=0)
         km.fit(X_dimred)
         np.savetxt('data/cell_labels/{}.txt'.format(name), km.labels_)
-    
-    cell_labels = (
-        open('data/cell_labels/{}.txt'.format(name))
-        .read().rstrip().split()
-    )
-    le = LabelEncoder().fit(cell_labels)
-    cell_labels = le.transform(cell_labels)
-    cell_types = le.classes_
+
+    if cell_labels is None:
+        cell_labels = (
+            open('data/cell_labels/{}.txt'.format(name))
+            .read().rstrip().split()
+        )
+        le = LabelEncoder().fit(cell_labels)
+        cell_labels = le.transform(cell_labels)
+        cell_types = le.classes_
+    else:
+        cell_types = [ str(ct) for ct in sorted(set(cell_labels)) ]
 
     # Visualize original data.
     
@@ -164,7 +171,7 @@ def experiment_srs(X_dimred, name, kmeans=True, visualize_orig=True,
             [ X_dimred[idx, :] ], cell_labels[idx],
             name + '_orig{}'.format(len(idx)), cell_types,
             gene_names=gene_names, gene_expr=expr, genes=genes,
-            perplexity=perplexity, n_iter=400, image_suffix='.png'
+            perplexity=perplexity, n_iter=500, image_suffix='.png'
         )
         np.savetxt('data/embedding_{}.txt'.format(name), embedding)
 

@@ -27,15 +27,35 @@ data_names = [
     'data/mouse_brain/dropviz/Thalamus',
 ]
 
+def keep_valid(datasets):
+    n_valid = 0
+    for i in range(len(datasets)):
+        valid_idx = []
+        with open('{}/meta.txt'.format(data_names[i])) as f:
+            n_lines = 0
+            for j, line in enumerate(f):
+                fields = line.rstrip().split()
+                if fields[1] != 'NA':
+                    valid_idx.append(j)
+                n_lines += 1
+        assert(n_lines == datasets[i].shape[0])
+        datasets[i] = datasets[i][valid_idx, :]
+        print('{} has {} valid cells'
+              .format(data_names[i], len(valid_idx)))
+        n_valid += len(valid_idx)
+    print('Found {} valid cells among all datasets'.format(n_valid))
+
 if __name__ == '__main__':
     datasets, genes_list, n_cells = load_names(data_names)
+    keep_valid(datasets)
     datasets, genes = merge_datasets(datasets, genes_list)
 
     if not os.path.isfile('data/dimred_{}.txt'.format(NAMESPACE)):
         datasets_dimred, genes = process_data(datasets, genes)
-        log('Scanorama integration...')
-        datasets_dimred = assemble(datasets_dimred, sigma=50,
-                                   batch_size=25000)
+        if not 'raw' in NAMESPACE:
+            log('Scanorama integration...')
+            datasets_dimred = assemble(datasets_dimred, sigma=50,
+                                       batch_size=25000)
         X_dimred = np.concatenate(datasets_dimred)
         np.savetxt('data/dimred_{}.txt'.format(NAMESPACE), X_dimred)
     else:
@@ -49,10 +69,20 @@ if __name__ == '__main__':
         'Synpr', 'Cacng4', 'Ttr', 'Gpr37', 'C1ql3', 'Fezf2',
     ]
 
-    experiment_srs(X_dimred, NAMESPACE, perplexity=1200,
-                   gene_names=viz_genes, genes=genes,
-                   gene_expr=vstack(datasets),
-                   #visualize_orig=False,
+    cell_labels = (
+        open('data/cell_labels/mouse_brain_cluster.txt')
+        .read().rstrip().split('\n')
+    )
+    le = LabelEncoder().fit(cell_labels)
+    cell_labels = le.transform(cell_labels)
+
+    experiment_efficiency_louvain(X_dimred, cell_labels)
+
+    experiment_efficiency_kmeans(X_dimred, cell_labels)
+
+    experiment_srs(X_dimred, NAMESPACE, cell_labels=cell_labels,
+                   perplexity=1200, gene_names=viz_genes,
+                   genes=genes, gene_expr=vstack(datasets),
                    kmeans=False)
 
     log('Done.')
