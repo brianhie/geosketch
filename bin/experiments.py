@@ -8,6 +8,50 @@ import sys
 from sketch import *
 from utils import *
 
+# Clustering-based downsampling efficiency.
+def cluster_efficiency(cluster_labels, auto_labels):
+    assert(len(cluster_labels) == len(auto_labels))
+
+    clusters = sorted(set(cluster_labels))
+    autos = sorted(set(auto_labels))
+
+    # Assign indices to clusters and autos.
+    cluster_idx = {
+        cluster: i for i, cluster in enumerate(clusters)
+    }
+    auto_idx = {
+        auto: j for j, auto in enumerate(autos)
+    }
+
+    # Count cluster-auto pairs.
+    table = np.zeros((len(cluster_idx), len(auto_idx)))
+    for cluster, auto in zip(cluster_labels, auto_labels):
+        i = cluster_idx[cluster]
+        j = auto_idx[auto]
+        table[i, j] += 1
+
+    # Map clusters to efficiencies.
+    cluster_to_efficiency = {}
+    for i, cluster in enumerate(clusters):
+
+        n_cluster_in_auto = []
+        pct_cluster_in_auto = []
+        for j, auto in enumerate(autos):
+            n_auto = sum(table[:, j])
+            n_in_auto = table[i, j]
+            pct_in_auto = float(n_in_auto) / float(n_auto)
+    
+            n_cluster_in_auto.append(n_in_auto)
+            pct_cluster_in_auto.append(pct_in_auto)
+
+        wsum = np.dot(n_cluster_in_auto, pct_cluster_in_auto)
+        assert(sum(n_cluster_in_auto) == sum(table[i, :]))
+        cluster_to_efficiency[cluster] = (
+            float(wsum) / float(sum(n_cluster_in_auto))
+        )
+
+    return cluster_to_efficiency
+
 def experiment_efficiency_kmeans(X_dimred, cluster_labels):
     log('k-means clustering efficiency experiment...')
     
@@ -18,23 +62,15 @@ def experiment_efficiency_kmeans(X_dimred, cluster_labels):
     for kmeans_k in kmeans_ks:
         log('k = {}'.format(kmeans_k))
 
-        km = KMeans(n_clusters=kmeans_k, n_init=100,
-                    n_jobs=40, verbose=0)
+        km = KMeans(n_clusters=kmeans_k, n_jobs=40, verbose=0)
         km.fit(X_dimred)
 
-        clusters = sorted(set(cluster_labels))
-    
         log('Calculating cluster efficiencies for k = {}'
             .format(kmeans_k))
 
-        cluster_to_efficiency = {}
-        for cluster in clusters:
-            efficiency = cluster_efficiency(
-                cluster, cluster_labels, km.labels_
-            )
-            cluster_to_efficiency[cluster] = efficiency
-
-        k_c_e[kmeans_k] = cluster_to_efficiency
+        k_c_e[kmeans_k] = cluster_efficiency(
+            cluster_labels, km.labels_
+        )
 
     for k in sorted(k_c_e.keys()):
         print('k = {}'.format(k))
@@ -66,23 +102,14 @@ def experiment_efficiency_louvain(X_dimred, cluster_labels):
         sc.tl.louvain(adata, resolution=resolution,
                       key_added='louvain')
         louvain_labels = np.array(adata.obs['louvain'].tolist())
-        log(type(louvain_labels))
-        log(len(louvain_labels))
 
-        clusters = sorted(set(cluster_labels))
-    
         log('Found {} clusters'.format(len(set(louvain_labels))))
         log('Calculating cluster efficiencies for resolution = {}'
             .format(resolution))
 
-        cluster_to_efficiency = {}
-        for cluster in clusters:
-            efficiency = cluster_efficiency(
-                cluster, cluster_labels, louvain_labels
-            )
-            cluster_to_efficiency[cluster] = efficiency
-
-        r_c_e[resolution] = cluster_to_efficiency
+        r_c_e[resolution] = cluster_efficiency(
+            cluster_labels, louvain_labels
+        )
 
     for r in sorted(r_c_e.keys()):
         print('resolution = {}'.format(r))
@@ -94,31 +121,13 @@ def experiment_efficiency_louvain(X_dimred, cluster_labels):
 
     return r_c_e
 
-# Clustering-based downsampling efficiency.
-def cluster_efficiency(cluster, cluster_labels, auto_labels):
-    assert(len(cluster_labels) == len(auto_labels))
+def report_cluster_counts(cluster_labels):
+    clusters = sorted(set(cluster_labels))
 
-    n_cluster_in_auto = []
-    pct_cluster_in_auto = []
-
-    autos = sorted(set(auto_labels))
-
-    for auto in autos:
-        auto_idx = auto_labels == auto
-        n_auto = sum(auto_idx)
-        in_auto = cluster_labels[auto_idx]
-        n_in_auto = sum(in_auto == cluster)
-        pct_in_auto = float(n_in_auto) / float(n_auto)
-
-        n_cluster_in_auto.append(n_in_auto)
-        pct_cluster_in_auto.append(pct_in_auto)
-
-    # Weighted sum.
-    wsum = np.dot(n_cluster_in_auto, pct_cluster_in_auto)
-
-    # Compute clustering-based downsampling efficiency.
-    # Divide weighted sum by number of samples in the cluster.
-    return float(wsum) / float(sum(n_cluster_in_auto))
+    for cluster in clusters:
+        n_cluster = sum(cluster_labels == cluster)
+        print('Cluster {} has {} cells'.
+              format(cluster, n_cluster))
 
 def experiment_srs(X_dimred, name, cell_labels=None,
                    kmeans=True, visualize_orig=True,
@@ -201,3 +210,5 @@ def experiment_srs(X_dimred, name, cell_labels=None,
                   gene_names=gene_names, gene_expr=expr, genes=genes,
                   perplexity=max(N/200, 50), n_iter=500,
                   size=max(int(30000/N), 1), image_suffix='.png')
+
+        report_cluster_counts(cell_labels[srs_idx])

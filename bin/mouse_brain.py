@@ -11,7 +11,7 @@ from utils import *
 
 np.random.seed(0)
 
-NAMESPACE = 'mouse_brain'
+NAMESPACE = 'mouse_brain_raw'
 METHOD = 'svd'
 DIMRED = 100
 
