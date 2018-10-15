@@ -1,18 +1,90 @@
 from annoy import AnnoyIndex
+from intervaltree import Interval, IntervalTree
 import numpy as np
+from sklearn.preprocessing import normalize
 import sys
 
-def srs(X, N, seed=None):
+def gs(X, N, seed=None, replace=False, prenormalized=False):
+    try:
+        import faiss
+    except ImportError:
+        sys.stderr.write(
+            'ERROR: Please install faiss: '
+            'https://github.com/facebookresearch/faiss/blob/master/INSTALL.md\n'
+        )
+        exit(1)
+
+    n_samples, n_features = X.shape
+
+    if not replace and N > n_samples:
+        raise ValueError('Cannot sample {} elements from {} elements '
+                         'without replacement'.format(N, n_samples))
+    if not replace and N == n_samples:
+        return range(N)
+
     if not seed is None:
         np.random.seed(seed)
-    
+
+    #if not prenormalized:
+    #    X = normalize(X, norm='l2', axis=1)
+    X = X.astype('float32')
+
+    # Build index.
+    quantizer = faiss.IndexFlatL2(n_features)
+    index = faiss.IndexIVFFlat(quantizer, n_features, 100,
+                               faiss.METRIC_L2)
+    index.train(X)
+    index.add(X)
+
+    # Generate Gaussian noise and use it to query data structure.
+    gs_idx = []
+    n_retries = N
+    for i in range(N):
+        for j in range(n_retries):
+            query = (np.random.normal(size=(n_features))
+                     .reshape(1, -1).astype('float32'))
+            _, I = index.search(query, 1)
+            assert(len(I) == 1)
+            assert(len(I[0]) == 1)
+            k_argmax = I[0][0]
+            if k_argmax != -1:
+                break
+        assert(k_argmax != -1)
+
+        if not replace:
+            n_removed = index.remove_ids(
+                faiss.IDSelectorRange(k_argmax, k_argmax + 1)
+            )
+            assert(n_removed == 1)
+        
+        gs_idx.append(k_argmax)
+
+    if not replace:
+        assert(len(set(gs_idx)) == N)
+
+    return gs_idx
+
+def srs(X, N, seed=None, replace=False, prenormalized=False):
     n_samples, n_features = X.shape
+
+    if not replace and N > n_samples:
+        raise ValueError('Cannot sample {} elements from {} elements '
+                         'without replacement'.format(N, n_samples))
+    if not replace and N == n_samples:
+        return range(N)
+
+    if not seed is None:
+        np.random.seed(seed)
+
+    if not prenormalized:
+        X = normalize(X).astype('float32')
 
     srs_idx = []
     for i in range(N):
         Phi_i = np.random.normal(size=(n_features))
         Q_i = X.dot(Phi_i)
-        Q_i[srs_idx] = 0
+        if not replace:
+            Q_i[srs_idx] = 0
         k_argmax = np.argmax(np.absolute(Q_i))
         srs_idx.append(k_argmax)
 

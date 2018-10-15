@@ -38,10 +38,10 @@ if __name__ == '__main__':
         'Synpr', 'Cacng4', 'Ttr', 'Gpr37', 'C1ql3', 'Fezf2',
     ]
 
-    experiment_srs(X_dimred, NAMESPACE,
-                   gene_names=viz_genes, genes=genes,
-                   gene_expr=vstack(datasets),
-                   #visualize_orig=False,
-                   kmeans=False)
+    experiment_gs(X_dimred, NAMESPACE,
+                  gene_names=viz_genes, genes=genes,
+                  gene_expr=vstack(datasets),
+                  visualize_orig=False,
+                  kmeans=False)
     
     log('Done.')

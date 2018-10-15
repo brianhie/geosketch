@@ -42,10 +42,10 @@ if __name__ == '__main__':
         'CCR4', 'PTGDR2', 'RORC'
     ]
 
-    experiment_srs(X_dimred, NAMESPACE, perplexity=1000,
-                   gene_names=viz_genes, genes=genes,
-                   gene_expr=vstack(datasets),
-                   #visualize_orig=False,
-                   kmeans=False)
+    experiment_gs(X_dimred, NAMESPACE, perplexity=1000,
+                  gene_names=viz_genes, genes=genes,
+                  gene_expr=vstack(datasets),
+                  visualize_orig=False,
+                  kmeans=False)
     
     log('Done.')

@@ -4,8 +4,9 @@ from scanorama import *
 from scipy.sparse import vstack
 from sklearn.preprocessing import LabelEncoder
 
-from process import load_names
+from dropclust_experiments import experiment_dropclust
 from experiments import *
+from process import load_names
 from utils import *
 
 NAMESPACE = 'simulate_varied'
@@ -35,12 +36,14 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(cell_labels)
     cell_labels = le.transform(cell_labels)
 
-    experiment_efficiency_louvain(X_dimred, cell_labels)
-
-    experiment_efficiency_kmeans(X_dimred, cell_labels)
-
-    experiment_srs(X_dimred, NAMESPACE, cell_labels=cell_labels,
-                   kmeans=False, perplexity=50,
-                   n_downsample=X_dimred.shape[0])
+    #experiment_efficiency_louvain(X_dimred, cell_labels)
+    #
+    #experiment_efficiency_kmeans(X_dimred, cell_labels)
+    #
+    experiment_gs(X_dimred, NAMESPACE, cell_labels=cell_labels,
+                  kmeans=False, visualize_orig=False)
+    #experiment_dropclust(X_dimred, 'data/' + NAMESPACE,
+    #                     cell_labels=cell_labels,
+    #                     perplexity=500)
 
     log('Done.')

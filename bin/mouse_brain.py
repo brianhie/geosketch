@@ -5,13 +5,14 @@ from scipy.sparse import vstack
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import normalize, LabelEncoder
 
-from process import load_names
+from dropclust_experiments import experiment_dropclust
 from experiments import *
+from process import load_names
 from utils import *
 
 np.random.seed(0)
 
-NAMESPACE = 'mouse_brain_raw'
+NAMESPACE = 'mouse_brain'
 METHOD = 'svd'
 DIMRED = 100
 
@@ -76,13 +77,17 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(cell_labels)
     cell_labels = le.transform(cell_labels)
 
-    experiment_efficiency_louvain(X_dimred, cell_labels)
+    #experiment_efficiency_louvain(X_dimred, cell_labels)
 
-    experiment_efficiency_kmeans(X_dimred, cell_labels)
+    #experiment_efficiency_kmeans(X_dimred, cell_labels)
+    
+    experiment_gs(X_dimred, NAMESPACE, cell_labels=cell_labels,
+                  perplexity=1200, gene_names=viz_genes,
+                  genes=genes, gene_expr=vstack(datasets),
+                  kmeans=False, visualize_orig=False)
 
-    experiment_srs(X_dimred, NAMESPACE, cell_labels=cell_labels,
-                   perplexity=1200, gene_names=viz_genes,
-                   genes=genes, gene_expr=vstack(datasets),
-                   kmeans=False)
+    #experiment_dropclust(X_dimred, 'data/' + NAMESPACE.rstrip('_raw'),
+    #                     cell_labels=cell_labels,
+    #                     perplexity=1200)
 
     log('Done.')

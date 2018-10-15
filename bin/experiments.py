@@ -129,11 +129,17 @@ def report_cluster_counts(cluster_labels):
         print('Cluster {} has {} cells'.
               format(cluster, n_cluster))
 
-def experiment_srs(X_dimred, name, cell_labels=None,
-                   kmeans=True, visualize_orig=True,
-                   downsample=True, n_downsample=100000,
-                   gene_names=None, gene_expr=None, genes=None,
-                   perplexity=500, kmeans_k=10):
+def experiment_srs(X_dimred, name, **kwargs):
+    experiment(srs, X_dimred, name, **kwargs)
+
+def experiment_gs(X_dimred, name, **kwargs):
+    experiment(gs, X_dimred, name, **kwargs)
+
+def experiment(sampling_fn, X_dimred, name, cell_labels=None,
+               kmeans=True, visualize_orig=True,
+               downsample=True, n_downsample=100000,
+               gene_names=None, gene_expr=None, genes=None,
+               perplexity=500, kmeans_k=10):
 
     # Assign cells to clusters.
 
@@ -192,23 +198,23 @@ def experiment_srs(X_dimred, name, cell_labels=None,
         if N >= X_dimred.shape[0]:
             continue
 
-        log('SRS {}...'.format(N))
-        srs_idx = srs(X_dimred, N)
-        log('Found {} entries'.format(len(set(srs_idx))))
+        log('Sampling {}...'.format(N))
+        samp_idx = sampling_fn(X_dimred, N)
+        log('Found {} entries'.format(len(set(samp_idx))))
 
         log('Visualizing sampled...')
 
         if not gene_names is None and \
            not gene_expr is None and \
            not genes is None:
-            expr = gene_expr[srs_idx, :]
+            expr = gene_expr[samp_idx, :]
         else:
             expr = None
 
-        visualize([ X_dimred[srs_idx, :] ], cell_labels[srs_idx],
+        visualize([ X_dimred[samp_idx, :] ], cell_labels[samp_idx],
                   name + '_srs{}'.format(N), cell_types,
                   gene_names=gene_names, gene_expr=expr, genes=genes,
                   perplexity=max(N/200, 50), n_iter=500,
                   size=max(int(30000/N), 1), image_suffix='.png')
 
-        report_cluster_counts(cell_labels[srs_idx])
+        report_cluster_counts(cell_labels[samp_idx])
