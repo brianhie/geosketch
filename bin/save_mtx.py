@@ -5,12 +5,13 @@ from scanorama import *
 from scipy.sparse import vstack
 
 from process import load_names
+from utils import mkdir_p
 
 def save_mtx(dir_name, X, genes):
     X = X.tocoo()
     
     if not os.path.exists(dir_name):
-        os.makedirs(dir_name)
+        mkdir_p(dir_name)
 
     with open(dir_name + '/matrix.mtx', 'w') as f:
         f.write('%%MatrixMarket matrix coordinate integer general\n')

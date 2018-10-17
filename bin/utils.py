@@ -1,5 +1,7 @@
+import errno
 from fbpca import pca
 import datetime
+import os
 from sklearn.random_projection import SparseRandomProjection as JLSparse
 import sys
 
@@ -23,3 +25,12 @@ def reduce_dimensionality(X, method='svd', dimred=DIMRED):
     else:
         sys.stderr.write('ERROR: Unknown method {}.'.format(svd))
         exit(1)
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise

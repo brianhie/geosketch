@@ -4,7 +4,6 @@ from scanorama import *
 from scipy.sparse import vstack
 from sklearn.preprocessing import LabelEncoder
 
-from dropclust_experiments import experiment_dropclust
 from experiments import *
 from process import load_names
 from utils import *
@@ -16,12 +15,15 @@ DIMRED = 100
 data_names = [ 'data/simulate/simulate_varied' ]
 
 if __name__ == '__main__':
+    datasets, genes_list, n_cells = load_names(data_names, norm=False)
+    datasets, genes = merge_datasets(datasets, genes_list)
+    X = vstack(datasets)
+
     if not os.path.isfile('data/dimred_{}.txt'.format(NAMESPACE)):
-        datasets, genes_list, n_cells = load_names(data_names)
-        datasets, genes = merge_datasets(datasets, genes_list)
         log('Dimension reduction with {}...'.format(METHOD))
-        X = vstack(datasets)
-        X_dimred = reduce_dimensionality(X, method=METHOD, dimred=DIMRED)
+        X_dimred = reduce_dimensionality(
+            normalize(X), method=METHOD, dimred=DIMRED
+        )
         if METHOD == 'jl_sparse':
             X_dimred = X_dimred.toarray()
         log('Dimensionality = {}'.format(X_dimred.shape[1]))
@@ -36,14 +38,21 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(cell_labels)
     cell_labels = le.transform(cell_labels)
 
-    #experiment_efficiency_louvain(X_dimred, cell_labels)
-    #
-    #experiment_efficiency_kmeans(X_dimred, cell_labels)
-    #
     experiment_gs(X_dimred, NAMESPACE, cell_labels=cell_labels,
                   kmeans=False, visualize_orig=False)
-    #experiment_dropclust(X_dimred, 'data/' + NAMESPACE,
-    #                     cell_labels=cell_labels,
-    #                     perplexity=500)
 
+    experiment_uni(X_dimred, NAMESPACE, cell_labels=cell_labels,
+                   kmeans=False, visualize_orig=False)
+    
+    name = 'data/{}'.format(NAMESPACE)
+    if not os.path.isfile('{}/matrix.mtx'.format(name)):
+        from save_mtx import save_mtx
+        save_mtx(name, csr_matrix(X), [ str(i) for i in range(X.shape[1]) ])
+
+    experiment_dropclust(X_dimred, name, cell_labels)
+
+    experiment_efficiency_kmeans(X_dimred, cell_labels)
+
+    experiment_efficiency_louvain(X_dimred, cell_labels)
+    
     log('Done.')

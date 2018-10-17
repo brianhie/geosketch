@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.sparse import csr_matrix
 
-from dropclust_experiments import *
+from experiments import dropclust_preprocess, dropclust_sample
 from save_mtx import save_mtx
 from sketch import *
 from utils import log

@@ -27,7 +27,7 @@ def gs(X, N, seed=None, replace=False, prenormalized=False):
 
     #if not prenormalized:
     #    X = normalize(X, norm='l2', axis=1)
-    X = X.astype('float32')
+    X = np.ascontiguousarray(X, dtype='float32')
 
     # Build index.
     quantizer = faiss.IndexFlatL2(n_features)
@@ -89,6 +89,20 @@ def srs(X, N, seed=None, replace=False, prenormalized=False):
         srs_idx.append(k_argmax)
 
     return srs_idx
+
+def uniform(X, N, seed=None, replace=False):
+    n_samples, n_features = X.shape
+
+    if not replace and N > n_samples:
+        raise ValueError('Cannot sample {} elements from {} elements '
+                         'without replacement'.format(N, n_samples))
+    if not replace and N == n_samples:
+        return range(N)
+
+    if not seed is None:
+        np.random.seed(seed)
+        
+    return list(np.random.choice(n_samples, size=N, replace=replace))
 
 def label(X, sites, site_labels, approx=True):
     if approx:

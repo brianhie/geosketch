@@ -16,6 +16,9 @@ data_names = [
 ]
 
 if __name__ == '__main__':
+    save_sketch(data_names, NAMESPACE)
+    exit()
+    
     datasets, genes_list, n_cells = load_names(data_names)
     datasets, genes = merge_datasets(datasets, genes_list)
 

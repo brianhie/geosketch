@@ -1,10 +1,14 @@
 import numpy as np
 import os
-from scanorama import visualize
+from scanorama import *
+from scipy.sparse import vstack
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import LabelEncoder
+from subprocess import Popen
 import sys
 
+from process import load_names
+from save_mtx import save_mtx
 from sketch import *
 from utils import *
 
@@ -121,6 +125,64 @@ def experiment_efficiency_louvain(X_dimred, cluster_labels):
 
     return r_c_e
 
+def dropclust_preprocess(name):
+    os.chdir('../dropClust')
+
+    rcode = Popen('Rscript dropClust_preprocess.R {} >> py.log'
+                  .format(name), shell=True).wait()
+
+    if rcode != 0:
+        sys.stderr.write('ERROR: subprocess returned error code {}\n'
+                         .format(rcode))
+        exit(rcode)
+
+    os.chdir('../ample')
+
+def dropclust_sample(name, N):
+    os.chdir('../dropClust')
+
+    rcode = Popen('Rscript dropClust_sample.R {} {} >> py.log'
+                  .format(name, N), shell=True).wait()
+
+    if rcode != 0:
+        sys.stderr.write('ERROR: subprocess returned error code {}\n'
+                         .format(rcode))
+        exit(rcode)
+
+    with open('{}_dropclust{}.txt'.format(name, N)) as f:
+        dropclust_idx = [
+            int(idx) for idx in
+            f.read().rstrip().split()
+        ]
+
+    os.chdir('../ample')
+
+    return dropclust_idx
+
+def experiment_dropclust(X_dimred, name, cell_labels):
+
+    log('dropClust preprocessing...')
+    dropclust_preprocess(name)
+    log('dropClust preprocessing done.')
+        
+    Ns = [ 1000, 5000, 10000, 20000, 50000 ]
+
+    cell_types = [ str(ct) for ct in sorted(set(cell_labels)) ]
+        
+    for N in Ns:
+        log('dropClust {}...'.format(N))
+        dropclust_idx = dropclust_sample(name, N)
+        log('Found {} entries'.format(len(set(dropclust_idx))))
+
+        log('Visualizing sampled...')
+
+        visualize([ X_dimred[dropclust_idx, :] ], cell_labels[dropclust_idx],
+                  name + '_dropclust{}'.format(N), cell_types,
+                  perplexity=max(N/200, 50), n_iter=500,
+                  size=max(int(30000/N), 1), image_suffix='.png')
+
+        report_cluster_counts(cell_labels[dropclust_idx])
+
 def report_cluster_counts(cluster_labels):
     clusters = sorted(set(cluster_labels))
 
@@ -130,16 +192,22 @@ def report_cluster_counts(cluster_labels):
               format(cluster, n_cluster))
 
 def experiment_srs(X_dimred, name, **kwargs):
+    kwargs['sample_type'] = 'srs'
     experiment(srs, X_dimred, name, **kwargs)
 
 def experiment_gs(X_dimred, name, **kwargs):
+    kwargs['sample_type'] = 'gs'
     experiment(gs, X_dimred, name, **kwargs)
 
+def experiment_uni(X_dimred, name, **kwargs):
+    kwargs['sample_type'] = 'uni'
+    experiment(uniform, X_dimred, name, **kwargs)
+    
 def experiment(sampling_fn, X_dimred, name, cell_labels=None,
                kmeans=True, visualize_orig=True,
                downsample=True, n_downsample=100000,
                gene_names=None, gene_expr=None, genes=None,
-               perplexity=500, kmeans_k=10):
+               perplexity=500, kmeans_k=10, sample_type=''):
 
     # Assign cells to clusters.
 
@@ -212,9 +280,23 @@ def experiment(sampling_fn, X_dimred, name, cell_labels=None,
             expr = None
 
         visualize([ X_dimred[samp_idx, :] ], cell_labels[samp_idx],
-                  name + '_srs{}'.format(N), cell_types,
+                  name + '_{}{}'.format(sample_type, N), cell_types,
                   gene_names=gene_names, gene_expr=expr, genes=genes,
                   perplexity=max(N/200, 50), n_iter=500,
                   size=max(int(30000/N), 1), image_suffix='.png')
 
         report_cluster_counts(cell_labels[samp_idx])
+
+def save_sketch(data_names, namespace):
+    datasets, genes_list, n_cells = load_names(data_names, norm=False)
+    datasets, genes = merge_datasets(datasets, genes_list)
+    X = vstack(datasets)
+    X_dimred = reduce_dimensionality(normalize(X))
+    
+    name = 'data/{}'.format(namespace)
+    Ns = [ 500, 1000, 2000, 5000 ]
+
+    for N in Ns:
+        gs_idx = gs(X_dimred, N)
+        save_mtx(name + '/{}'.format(N), csr_matrix(X),
+                 [ str(i) for i in range(N) ])

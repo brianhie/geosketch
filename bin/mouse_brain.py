@@ -5,14 +5,13 @@ from scipy.sparse import vstack
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import normalize, LabelEncoder
 
-from dropclust_experiments import experiment_dropclust
 from experiments import *
 from process import load_names
 from utils import *
 
 np.random.seed(0)
 
-NAMESPACE = 'mouse_brain'
+NAMESPACE = 'mouse_brain_raw'
 METHOD = 'svd'
 DIMRED = 100
 
@@ -47,9 +46,13 @@ def keep_valid(datasets):
     print('Found {} valid cells among all datasets'.format(n_valid))
 
 if __name__ == '__main__':
-    datasets, genes_list, n_cells = load_names(data_names)
+    save_sketch(data_names, NAMESPACE)
+    exit()
+    
+    datasets, genes_list, n_cells = load_names(data_names, norm=False)
     keep_valid(datasets)
     datasets, genes = merge_datasets(datasets, genes_list)
+    X = vstack(datasets)
 
     if not os.path.isfile('data/dimred_{}.txt'.format(NAMESPACE)):
         datasets_dimred, genes = process_data(datasets, genes)
@@ -77,17 +80,21 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(cell_labels)
     cell_labels = le.transform(cell_labels)
 
-    #experiment_efficiency_louvain(X_dimred, cell_labels)
-
-    #experiment_efficiency_kmeans(X_dimred, cell_labels)
-    
     experiment_gs(X_dimred, NAMESPACE, cell_labels=cell_labels,
-                  perplexity=1200, gene_names=viz_genes,
-                  genes=genes, gene_expr=vstack(datasets),
                   kmeans=False, visualize_orig=False)
+    
+    experiment_uni(X_dimred, NAMESPACE, cell_labels=cell_labels,
+                   kmeans=False, visualize_orig=False)
+    
+    name = 'data/{}'.format(NAMESPACE)
+    if not os.path.isfile('{}/matrix.mtx'.format(name)):
+        from save_mtx import save_mtx
+        save_mtx(name, csr_matrix(X), [ str(i) for i in range(X.shape[1]) ])
+    
+    experiment_dropclust(X_dimred, name, cell_labels)
 
-    #experiment_dropclust(X_dimred, 'data/' + NAMESPACE.rstrip('_raw'),
-    #                     cell_labels=cell_labels,
-    #                     perplexity=1200)
+    experiment_efficiency_kmeans(X_dimred, cell_labels)
 
+    experiment_efficiency_louvain(X_dimred, cell_labels)
+    
     log('Done.')
