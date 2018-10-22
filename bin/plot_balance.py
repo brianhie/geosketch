@@ -92,6 +92,9 @@ def parse_log(fnames):
     plot_stat(dists, np.std)
     plt.title('Standard deviation')
     
+    plot_stat(dists, lambda x: np.sum(x != 0))
+    plt.title('Number of clusters')
+    
     plt.show()
             
     
