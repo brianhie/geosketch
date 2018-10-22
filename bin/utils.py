@@ -17,7 +17,7 @@ def log(string):
 def reduce_dimensionality(X, method='svd', dimred=DIMRED):
     if method == 'svd':
         k = min((dimred, X.shape[0], X.shape[1]))
-        U, s, Vt = pca(X, k=k) # Automatically centers.
+        U, s, Vt = pca(X, k=k)
         return U[:, range(k)] * s[range(k)]
     elif method == 'jl_sparse':
         jls = JLSparse(n_components=dimred)

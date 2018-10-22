@@ -46,9 +46,6 @@ def keep_valid(datasets):
     print('Found {} valid cells among all datasets'.format(n_valid))
 
 if __name__ == '__main__':
-    save_sketch(data_names, NAMESPACE)
-    exit()
-    
     datasets, genes_list, n_cells = load_names(data_names, norm=False)
     keep_valid(datasets)
     datasets, genes = merge_datasets(datasets, genes_list)
@@ -82,7 +79,8 @@ if __name__ == '__main__':
 
     experiment_gs(X_dimred, NAMESPACE, cell_labels=cell_labels,
                   kmeans=False, visualize_orig=False)
-    
+    exit()
+
     experiment_uni(X_dimred, NAMESPACE, cell_labels=cell_labels,
                    kmeans=False, visualize_orig=False)
     

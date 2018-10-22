@@ -40,7 +40,8 @@ if __name__ == '__main__':
 
     experiment_gs(X_dimred, NAMESPACE, cell_labels=cell_labels,
                   kmeans=False, visualize_orig=False)
-
+    exit()
+    
     experiment_uni(X_dimred, NAMESPACE, cell_labels=cell_labels,
                    kmeans=False, visualize_orig=False)
     

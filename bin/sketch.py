@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.preprocessing import normalize
 import sys
 
-def gs(X, N, seed=None, replace=False, prenormalized=False):
+def gs(X, N, seed=None, replace=True, prenormalized=False):
     try:
         import faiss
     except ImportError:
@@ -41,8 +41,9 @@ def gs(X, N, seed=None, replace=False, prenormalized=False):
     n_retries = N
     for i in range(N):
         for j in range(n_retries):
-            query = (np.random.normal(size=(n_features))
-                     .reshape(1, -1).astype('float32'))
+            query = np.random.normal(size=(n_features))
+            #query = query / np.linalg.norm(query)
+            query = query.reshape(1, -1).astype('float32')
             _, I = index.search(query, 1)
             assert(len(I) == 1)
             assert(len(I[0]) == 1)

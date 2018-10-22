@@ -1,4 +1,5 @@
 *.log
+*.pdf
 *.png
 *.pyc
 *.svg

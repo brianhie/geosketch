@@ -16,7 +16,7 @@ data_names = [
 ]
 
 if __name__ == '__main__':
-    save_sketch(data_names, NAMESPACE)
+    experiment_find_rare(data_names, NAMESPACE)
     exit()
     
     datasets, genes_list, n_cells = load_names(data_names)

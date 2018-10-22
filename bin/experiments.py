@@ -3,6 +3,7 @@ import os
 from scanorama import *
 from scipy.sparse import vstack
 from sklearn.cluster import KMeans
+from sklearn.metrics import adjusted_rand_score
 from sklearn.preprocessing import LabelEncoder
 from subprocess import Popen
 import sys
@@ -287,6 +288,112 @@ def experiment(sampling_fn, X_dimred, name, cell_labels=None,
 
         report_cluster_counts(cell_labels[samp_idx])
 
+def seurat_cluster(name):
+    rcode = Popen('Rscript R/seurat.R {0} > {0}.log 2>&1'
+                  .format(name), shell=True).wait()
+    if rcode != 0:
+        sys.stderr.write('ERROR: subprocess returned error code {}\n'
+                         .format(rcode))
+        exit(rcode)
+
+    labels = []
+    with open(name + '_labels.txt') as f:
+        f.readline()
+        for line in f:
+            labels.append(line.rstrip().split()[1])
+    return labels
+
+def experiment_seurat_ari(data_names, namespace):
+    datasets, genes_list, n_cells = load_names(data_names, norm=False)
+    datasets, genes = merge_datasets(datasets, genes_list)
+    X = vstack(datasets)
+    X_dimred = reduce_dimensionality(normalize(X))
+
+    name = 'data/{}'.format(namespace)
+    Ns = [ 500, 1000, 2000, 5000, 10000 ]
+    
+    if not os.path.isfile('{}/matrix.mtx'.format(name)):
+        save_mtx(name, csr_matrix(X), genes)
+    log('Seurat clustering full dataset...')
+    cluster_labels_full = seurat_cluster(name)
+    log('Seurat clustering done.')
+
+    for N in Ns:
+        gs_idx = gs(X_dimred, N)
+        save_mtx(name + '/gs{}'.format(N), csr_matrix(X[gs_idx, :]),
+                 genes)
+        log('Seurat clustering GS N = {}...'.format(N))
+        seurat_labels = seurat_cluster(name + '/gs{}'.format(N))
+        log('Seurat clustering GS N = {} done.'.format(N))
+        cluster_labels = label_approx(
+            X_dimred, X_dimred[gs_idx], seurat_labels
+        )
+        log('N = {}, GS ARI = {}'.format(
+            N, adjusted_rand_score(cluster_labels_full, cluster_labels)
+        ))
+        
+        uni_idx = uniform(X_dimred, N)
+        save_mtx(name + '/uni{}'.format(N), csr_matrix(X[uni_idx, :]),
+                 genes)
+        log('Seurat clustering uniform N = {}...'.format(N))
+        seurat_labels = seurat_cluster(name + '/uni{}'.format(N))
+        log('Seurat clustering uniform N = {} done.'.format(N))
+        cluster_labels = label_approx(
+            X_dimred, X_dimred[uni_idx], seurat_labels
+        )
+        log('N = {}, Uniform ARI = {}'.format(
+            N, adjusted_rand_score(cluster_labels_full, cluster_labels)
+        ))
+
+def experiment_find_rare(data_names, namespace):
+    datasets, genes_list, n_cells = load_names(data_names, norm=False)
+    datasets, genes = merge_datasets(datasets, genes_list)
+    X = vstack(datasets)
+    X_dimred = reduce_dimensionality(normalize(X))
+
+    name = 'data/{}'.format(namespace)
+    
+    if not os.path.isfile('{}_louvain.txt'.format(name)):
+        from anndata import AnnData
+        import scanpy.api as sc
+    
+        adata = AnnData(X=X_dimred)
+        sc.pp.neighbors(adata, use_rep='X')
+        sc.tl.louvain(adata, resolution=3, key_added='louvain')
+        cluster_labels_full = [
+            str(c) for c in 
+            np.array(adata.obs['louvain'].tolist())
+        ]
+        with open('{}_louvain.txt'.format(name), 'w') as of:
+            of.write('\n'.join(cluster_labels_full) + '\n')
+
+    else:
+        with open('{}_louvain.txt'.format(name)) as f:
+            cluster_labels_full = f.read().rstrip().split()
+
+    Ns = [ 500, 1000, 2000, 5000, 10000 ]
+    
+    for N in Ns:
+        gs_idx = gs(X_dimred, N)
+        save_mtx(name + '/gs{}'.format(N), csr_matrix(X[gs_idx, :]),
+                 genes)
+        log('Seurat clustering GS N = {}...'.format(N))
+        seurat_labels = seurat_cluster(name + '/gs{}'.format(N))
+        log('Seurat clustering GS N = {} done.'.format(N))
+        cluster_labels = label_approx(
+            X_dimred, X_dimred[gs_idx], seurat_labels
+        )
+        cluster_to_efficiency = cluster_efficiency(
+            cluster_labels, cluster_labels_full
+        )
+
+        clusters = sorted(set(seurat_labels))
+        for cluster in clusters:
+            n_cluster = sum(cluster_labels == cluster)
+            log('Cluster {}: {} cells, efficiency {}'
+                .format(cluster, n_cluster,
+                        cluster_to_efficiency[cluster]))
+        
 def save_sketch(data_names, namespace):
     datasets, genes_list, n_cells = load_names(data_names, norm=False)
     datasets, genes = merge_datasets(datasets, genes_list)
@@ -294,9 +401,25 @@ def save_sketch(data_names, namespace):
     X_dimred = reduce_dimensionality(normalize(X))
     
     name = 'data/{}'.format(namespace)
-    Ns = [ 500, 1000, 2000, 5000 ]
+    Ns = [ 500, 1000, 2000, 5000, 10000 ]
 
+    from mutual_info import entropy
+    
+    if not os.path.isfile('{}/matrix.mtx'.format(name)):
+        save_mtx(name, csr_matrix(X[gs_idx, :]), genes)
+    
     for N in Ns:
+        log('N = {}'.format(N))
         gs_idx = gs(X_dimred, N)
-        save_mtx(name + '/{}'.format(N), csr_matrix(X),
-                 [ str(i) for i in range(N) ])
+        if not os.path.isfile('{}/matrix.mtx'
+                              .format(name + '/gs{}'.format(N))):
+            save_mtx(name + '/gs{}'.format(N), csr_matrix(X[gs_idx, :]),
+                     genes)
+        
+        uni_idx = uniform(X_dimred, N)
+        if not os.path.isfile('{}/matrix.mtx'
+                              .format(name + '/uni{}'.format(N))):
+            save_mtx(name + '/uni{}'.format(N), csr_matrix(X[uni_idx, :]),
+                     genes)
+        
+    return X_dimred
