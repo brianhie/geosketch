@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.preprocessing import normalize
 import sys
 
-def gs(X, N, seed=None, replace=True, prenormalized=False):
+def gs(X, N, seed=None, replace=False, prenormalized=False):
     try:
         import faiss
     except ImportError:

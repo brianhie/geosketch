@@ -16,7 +16,6 @@ def plot_stat(dists, stat_fn):
     plt.figure()
     for dist in dists:
         stats = []
-        var_proportions = []
         for sample_size in sample_sizes:
             clusters = sorted(dist[sample_size].keys())
             cluster_hist = np.zeros(max(clusters) + 1)

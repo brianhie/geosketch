@@ -109,9 +109,11 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(cell_labels)
     cell_labels = le.transform(cell_labels)
 
+    balance(X_dimred, NAMESPACE, cell_labels)
+    exit()
+
     experiment_gs(X_dimred, NAMESPACE, cell_labels=cell_labels,
                   kmeans=False, visualize_orig=False)
-    exit()
     
     experiment_uni(X_dimred, NAMESPACE, cell_labels=cell_labels,
                    kmeans=False, visualize_orig=False)

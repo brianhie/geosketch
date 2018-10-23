@@ -126,11 +126,15 @@ def experiment_efficiency_louvain(X_dimred, cluster_labels):
 
     return r_c_e
 
-def dropclust_preprocess(name):
+def dropclust_preprocess(name, seed=None):
     os.chdir('../dropClust')
 
-    rcode = Popen('Rscript dropClust_preprocess.R {} >> py.log'
-                  .format(name), shell=True).wait()
+    if seed is None:
+        rcode = Popen('Rscript dropClust_preprocess.R {} >> py.log'
+                      .format(name), shell=True).wait()
+    else:
+        rcode = Popen('Rscript dropClust_preprocess.R {} {} >> py.log'
+                      .format(name, seed), shell=True).wait()
 
     if rcode != 0:
         sys.stderr.write('ERROR: subprocess returned error code {}\n'
@@ -139,11 +143,15 @@ def dropclust_preprocess(name):
 
     os.chdir('../ample')
 
-def dropclust_sample(name, N):
+def dropclust_sample(name, N, seed=None):
     os.chdir('../dropClust')
 
-    rcode = Popen('Rscript dropClust_sample.R {} {} >> py.log'
-                  .format(name, N), shell=True).wait()
+    if seed is None:
+        rcode = Popen('Rscript dropClust_sample.R {} {} >> py.log'
+                      .format(name, N), shell=True).wait()
+    else:
+        rcode = Popen('Rscript dropClust_sample.R {} {} {} >> py.log'
+                      .format(name, N, seed), shell=True).wait()
 
     if rcode != 0:
         sys.stderr.write('ERROR: subprocess returned error code {}\n'
@@ -159,6 +167,10 @@ def dropclust_sample(name, N):
     os.chdir('../ample')
 
     return dropclust_idx
+
+def dropclust(name, N, seed=1):
+    dropclust_preprocess(name, seed=seed)
+    return dropclust_sample(name, N, seed=seed)
 
 def experiment_dropclust(X_dimred, name, cell_labels):
 
@@ -288,6 +300,142 @@ def experiment(sampling_fn, X_dimred, name, cell_labels=None,
 
         report_cluster_counts(cell_labels[samp_idx])
 
+
+def normalized_entropy(counts):
+    k = len(counts)
+    if k <= 1:
+        return 1
+    
+    n_samples = sum(counts)
+
+    H = -sum([ (counts[i] / n_samples) * np.log(counts[i] / n_samples)
+               for i in range(k) if counts[i] > 0 ])
+    
+    return H / np.log(k)
+    
+def balance(X_dimred, name, cell_labels, n_seeds=10):
+    Ns = [ 100, 500, 1000, 5000, 10000, 20000 ]
+
+    clusters = set(cell_labels)
+    max_cluster = max(clusters)
+                
+    sampling_fns = [ gs, uniform, ]#dropclust ]
+    sampling_fn_names = [ 'GS', 'Uniform', ]#'dropClust' ]
+
+    sampling_entropies_means = []
+    sampling_entropies_sems = []
+    
+    for s_idx, sampling_fn in enumerate(sampling_fns):
+        
+        for replace in [ True, False ]:
+            if sampling_fn_names[s_idx] == 'dropClust' and replace:
+                continue
+
+            entropies_means, entropies_sems = [], []
+
+            for N in Ns:
+                assert(N < X_dimred.shape[0])
+            
+                entropies = []
+                
+                for seed in range(n_seeds):
+            
+                    if sampling_fn_names[s_idx] == 'dropClust':
+                        samp_idx = dropclust('data/' + name, N, seed=seed)
+                    else:
+                        samp_idx = sampling_fn(X_dimred, N, seed=seed, replace=replace)
+                        
+                    cluster_labels = cell_labels[samp_idx]
+                    
+                    cluster_hist = np.zeros(max_cluster + 1)
+                    for c in range(max_cluster + 1):
+                        if c in clusters:
+                            cluster_hist[c] = sum(cluster_labels == c)
+
+                    entropies.append(normalized_entropy(cluster_hist))
+
+                entropies_means.append(np.mean(entropies))
+                entropies_sems.append(scipy.stats.sem(entropies))
+
+            sampling_entropies_means.append(np.array(entropies_means))
+            sampling_entropies_sems.append(np.array(entropies_sems))
+
+    colors = [ '#377eb8', '#ff7f00', '#4daf4a', '#f781bf' ]
+            
+    plt.figure()
+    for s_idx in range(len(sampling_fns) * 2):
+        entropies_means = sampling_entropies_means[s_idx]
+        entropies_sems = sampling_entropies_sems[s_idx]
+        plt.plot(Ns, entropies_means, color=colors[s_idx / 2],
+                 linestyle=('solid' if s_idx % 2 == 0 else 'dashed'))
+        plt.scatter(Ns, entropies_means, color=colors[s_idx / 2])
+        plt.fill_between(Ns, entropies_means - entropies_sems,
+                         entropies_means + entropies_sems, alpha=0.3,
+                         color=colors[s_idx / 2])
+    plt.title('Entropies')
+    plt.savefig('{}_entropies.svg'.format(name))
+    
+    plt.show()
+    
+def rare(X_dimred, name, cell_labels, rare_label, n_seeds=10):
+    Ns = [ 100, 500, 1000, 5000, 10000, 20000, 50000 ]
+
+    clusters = set(cell_labels)
+    max_cluster = max(clusters)
+                
+    sampling_fns = [ gs, uniform, ]#dropclust ]
+    sampling_fn_names = [ 'GS', 'Uniform', ]#'dropClust' ]
+
+    sampling_counts_means = []
+    sampling_counts_sems = []
+    
+    for s_idx, sampling_fn in enumerate(sampling_fns):
+        
+        for replace in [ True, False ]:
+            if sampling_fn_names[s_idx] == 'dropClust' and replace:
+                continue
+
+            counts_means, counts_sems = [], []
+
+            for N in Ns:
+                assert(N < X_dimred.shape[0])
+            
+                counts = []
+                
+                for seed in range(n_seeds):
+            
+                    if sampling_fn_names[s_idx] == 'dropClust':
+                        samp_idx = dropclust('data/' + name, N, seed=seed)
+                    else:
+                        samp_idx = sampling_fn(X_dimred, N, seed=seed, replace=replace)
+                        
+                    cluster_labels = cell_labels[samp_idx]
+                    
+                    counts.append(sum(cluster_labels == rare_label))
+
+                counts_means.append(np.mean(counts))
+                counts_sems.append(scipy.stats.sem(counts))
+
+            sampling_counts_means.append(np.array(counts_means))
+            sampling_counts_sems.append(np.array(counts_sems))
+
+    colors = [ '#377eb8', '#ff7f00', '#4daf4a', '#f781bf' ]
+            
+    plt.figure()
+    for s_idx in range(len(sampling_fns) * 2):
+        counts_means = sampling_counts_means[s_idx]
+        counts_sems = sampling_counts_sems[s_idx]
+        plt.plot(Ns, counts_means, color=colors[s_idx / 2],
+                 linestyle=('solid' if s_idx % 2 == 0 else 'dashed'))
+        plt.scatter(Ns, counts_means, color=colors[s_idx / 2])
+        plt.fill_between(Ns, counts_means - counts_sems,
+                         counts_means + counts_sems, alpha=0.3,
+                         color=colors[s_idx / 2])
+    plt.title('Rare cell type counts')
+    plt.savefig('{}_rare_counts.svg'.format(name))
+    
+    plt.show()
+    
 def seurat_cluster(name):
     rcode = Popen('Rscript R/seurat.R {0} > {0}.log 2>&1'
                   .format(name), shell=True).wait()
