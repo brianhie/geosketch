@@ -378,7 +378,7 @@ def balance(X_dimred, name, cell_labels, n_seeds=10):
     plt.show()
     
 def rare(X_dimred, name, cell_labels, rare_label, n_seeds=10):
-    Ns = [ 100, 500, 1000, 5000, 10000, 20000, 50000 ]
+    Ns = [ 100, 500, 1000, 5000, 10000, 20000 ]
 
     clusters = set(cell_labels)
     max_cluster = max(clusters)

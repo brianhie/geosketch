@@ -12,8 +12,8 @@ from utils import *
 np.random.seed(0)
 
 NAMESPACE = 'tabula_ss2'
-METHOD = 'svd'
-DIMRED = 100
+METHOD = 'hvg'
+DIMRED = 1000
 
 data_names = [
     'data/murine_atlases/tabula_ss2/Aorta',
@@ -76,17 +76,15 @@ if __name__ == '__main__':
     X = vstack(datasets)
     X = X[valid_idx, :]
         
-    if not os.path.isfile('data/dimred_{}.txt'.format(NAMESPACE)):
+    if not os.path.isfile('data/dimred_{}_{}.txt'.format(METHOD, NAMESPACE)):
         log('Dimension reduction with {}...'.format(METHOD))
         X_dimred = reduce_dimensionality(
             normalize(X), method=METHOD, dimred=DIMRED
         )
-        if METHOD == 'jl_sparse':
-            X_dimred = X_dimred.toarray()
         log('Dimensionality = {}'.format(X_dimred.shape[1]))
-        np.savetxt('data/dimred_{}.txt'.format(NAMESPACE), X_dimred)
+        np.savetxt('data/dimred_{}_{}.txt'.format(METHOD, NAMESPACE), X_dimred)
     else:
-        X_dimred = np.loadtxt('data/dimred_{}.txt'.format(NAMESPACE))
+        X_dimred = np.loadtxt('data/dimred_{}_{}.txt'.format(METHOD, NAMESPACE))
         
     viz_genes = [
     ]
@@ -99,8 +97,9 @@ if __name__ == '__main__':
     cell_labels = le.transform(cell_labels)
     
     balance(X_dimred, NAMESPACE, cell_labels)
-    exit()
 
+    exit()
+    
     experiment_gs(X_dimred, NAMESPACE, cell_labels=cell_labels,
                   kmeans=False, visualize_orig=False)
     

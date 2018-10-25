@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.preprocessing import normalize
 import sys
 
-def gs(X, N, seed=None, replace=False, prenormalized=False):
+def gs(X, N, seed=None, replace=True, prenormalized=False):
     try:
         import faiss
     except ImportError:
@@ -25,45 +25,62 @@ def gs(X, N, seed=None, replace=False, prenormalized=False):
     if not seed is None:
         np.random.seed(seed)
 
-    #if not prenormalized:
-    #    X = normalize(X, norm='l2', axis=1)
-    X = np.ascontiguousarray(X, dtype='float32')
+    if not prenormalized:
+        X = normalize(X, norm='l2', axis=1)
+
+    #X = np.ascontiguousarray(X, dtype='float32')
 
     # Build index.
-    quantizer = faiss.IndexFlatL2(n_features)
-    index = faiss.IndexIVFFlat(quantizer, n_features, 100,
-                               faiss.METRIC_L2)
-    index.train(X)
-    index.add(X)
+    aindex = AnnoyIndex(n_features, metric='euclidean')
+    for i in range(n_samples):
+        aindex.add_item(i, X[i, :])
+    aindex.build(10)
+    #quantizer = faiss.IndexFlatL2(n_features)
+    #index = faiss.IndexIVFFlat(quantizer, n_features, 100,
+    #                           faiss.METRIC_L2)
+    #index.train(X)
+    #index.add(X)
 
     # Generate Gaussian noise and use it to query data structure.
-    gs_idx = []
+    gs_idx = set()
     n_retries = N
     for i in range(N):
+        query = np.random.normal(size=(n_features))
+        query = np.absolute(query)
+        query = query / np.linalg.norm(query)
+        #query = query.reshape(1, -1).astype('float32')
+        k_argmax = -1
         for j in range(n_retries):
-            query = np.random.normal(size=(n_features))
-            #query = query / np.linalg.norm(query)
-            query = query.reshape(1, -1).astype('float32')
-            _, I = index.search(query, 1)
-            assert(len(I) == 1)
-            assert(len(I[0]) == 1)
-            k_argmax = I[0][0]
+            #dist, I = index.search(query, j + 1)
+            #print((dist, I))
+            #assert(len(I) == 1)
+            #assert(len(I[0]) == j + 1)
+            #k_argmax = I[0][0]
+            #if k_argmax != -1:
+            #    break
+            nearest_idx, nearest_dist = aindex.get_nns_by_vector(
+                query, (j * 2) + 1, include_distances=True
+            )
+            for idx, dist in zip(nearest_idx, nearest_dist):
+                if not replace and idx in gs_idx:
+                    continue
+                k_argmax = idx
+                break
             if k_argmax != -1:
                 break
-        assert(k_argmax != -1)
+        #if not replace:
+        #    n_removed = index.remove_ids(
+        #        faiss.IDSelectorRange(k_argmax, k_argmax + 1)
+        #    )
+        #    assert(n_removed == 1)
+        #    print('remove {}'.format(k_argmax))
+        if k_argmax != -1:
+            gs_idx.add(k_argmax)
 
-        if not replace:
-            n_removed = index.remove_ids(
-                faiss.IDSelectorRange(k_argmax, k_argmax + 1)
-            )
-            assert(n_removed == 1)
-        
-        gs_idx.append(k_argmax)
+    #if not replace:
+    #    assert(len(set(gs_idx)) == N)
 
-    if not replace:
-        assert(len(set(gs_idx)) == N)
-
-    return gs_idx
+    return sorted(gs_idx)
 
 def srs(X, N, seed=None, replace=False, prenormalized=False):
     n_samples, n_features = X.shape
