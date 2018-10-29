@@ -7,8 +7,58 @@ import sys
 
 from utils import log
 
-def gs(X, N, seed=None, replace=False, prenormalized=False, method='faiss',
-       alpha=0.1, max_iter=200, verbose=3, labels=None):
+def gs(X, N, seed=None, replace=True, method='faiss', verbose=False, labels=None):
+    k = 10
+    power = 10
+
+    if verbose:
+        log('k = {}, power = {}'.format(k, power))
+    
+    n_samples, n_features = X.shape
+
+    # Error checking and initialization.
+    if not seed is None:
+        np.random.seed(seed)
+    method = check_method(method)
+    if method == 'faiss':
+        import faiss
+    if not replace and N > n_samples:
+        raise ValueError('Cannot sample {} elements from {} elements '
+                         'without replacement'.format(N, n_samples))
+    if not replace and N == n_samples:
+        return range(N)
+    X = np.ascontiguousarray(X, dtype='float32')
+
+    index = AnnoyIndex(n_features, metric='manhattan')
+    for i in range(n_samples):
+        index.add_item(i, X[i, :])
+    index.build(10)
+
+    #quantizer = faiss.IndexFlatL2(n_features)
+    #index = faiss.IndexIVFFlat(quantizer, n_features, 100, faiss.METRIC_L2)
+    #index.train(X)
+    #index.add(X)
+
+    weights = []
+    for i in range(n_samples):
+        if verbose and i % 20000 == 0:
+            log('Process {} samples'.format(i))
+        #dist, idx = index.search(X[i, :].reshape(1, -1), k)
+        idx, dist = index.get_nns_by_item(i, k, include_distances=True)
+        weights.append(np.min(dist[1]) ** power)
+    weights = np.array(weights) / sum(weights)
+
+    if labels is not None:
+        clusters = sorted(set(labels))
+        for cluster in clusters:
+            print('Cluster {} has mean {} and std {}'
+                  .format(cluster, np.mean(weights[labels == cluster]),
+                          np.std(weights[labels == cluster])))
+            
+    return np.random.choice(range(n_samples), size=N, p=weights, replace=replace)
+
+def gs_binary(X, N, seed=None, replace=False, prenormalized=False, method='faiss',
+              alpha=0.1, max_iter=200, verbose=3, labels=None):
     n_samples, n_features = X.shape
 
     # Error checking and initialization.

@@ -51,15 +51,21 @@ if __name__ == '__main__':
     datasets, genes = merge_datasets(datasets, genes_list)
     X = vstack(datasets)
 
-    if not os.path.isfile('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE)):
-        log('Dimension reduction with {}...'.format(METHOD))
-        X_dimred = reduce_dimensionality(
-            normalize(X), method=METHOD, dimred=DIMRED
-        )
-        log('Dimensionality = {}'.format(X_dimred.shape[1]))
-        np.savetxt('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE), X_dimred)
-    else:
-        X_dimred = np.loadtxt('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE))
+    log('Dimension reduction with {}...'.format(METHOD))
+    X_dimred = reduce_dimensionality(
+        normalize(X, norm='l1'), method='svd', dimred=3
+    )
+    log('Dimensionality = {}'.format(X_dimred.shape[1]))
+    
+    #if not os.path.isfile('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE)):
+    #    log('Dimension reduction with {}...'.format(METHOD))
+    #    X_dimred = reduce_dimensionality(
+    #        normalize(X), method=METHOD, dimred=DIMRED
+    #    )
+    #    log('Dimensionality = {}'.format(X_dimred.shape[1]))
+    #    np.savetxt('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE), X_dimred)
+    #else:
+    #    X_dimred = np.loadtxt('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE))
         
     viz_genes = [
         'Gja1', 'Flt1', 'Gabra6', 'Syt1', 'Gabrb2', 'Gabra1',
