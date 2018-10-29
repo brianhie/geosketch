@@ -168,10 +168,6 @@ def dropclust_sample(name, N, seed=None):
 
     return dropclust_idx
 
-def dropclust(name, N, seed=1):
-    dropclust_preprocess(name, seed=seed)
-    return dropclust_sample(name, N, seed=seed)
-
 def experiment_dropclust(X_dimred, name, cell_labels):
 
     log('dropClust preprocessing...')
@@ -319,13 +315,16 @@ def balance(X_dimred, name, cell_labels, n_seeds=10):
     clusters = set(cell_labels)
     max_cluster = max(clusters)
                 
-    sampling_fns = [ gs, uniform, ]#dropclust ]
+    sampling_fns = [ gs, uniform, ]#none ]
     sampling_fn_names = [ 'GS', 'Uniform', ]#'dropClust' ]
 
     sampling_entropies_means = []
     sampling_entropies_sems = []
     
     for s_idx, sampling_fn in enumerate(sampling_fns):
+
+        if sampling_fn_names[s_idx] == 'dropClust':
+            dropclust_preprocess(name)
         
         for replace in [ True, False ]:
             if sampling_fn_names[s_idx] == 'dropClust' and replace:
@@ -334,16 +333,22 @@ def balance(X_dimred, name, cell_labels, n_seeds=10):
             entropies_means, entropies_sems = [], []
 
             for N in Ns:
-                assert(N < X_dimred.shape[0])
+                if N > X_dimred.shape[0]:
+                    continue
+                log('N = {}...'.format(N))
             
                 entropies = []
                 
                 for seed in range(n_seeds):
             
                     if sampling_fn_names[s_idx] == 'dropClust':
-                        samp_idx = dropclust('data/' + name, N, seed=seed)
+                        log('Sampling dropClust...')
+                        samp_idx = dropclust_sample('data/' + name, N, seed=seed)
+                        log('Sampling dropClust done.')
                     else:
+                        log('Sampling {}...'.format(sampling_fn_names[s_idx]))
                         samp_idx = sampling_fn(X_dimred, N, seed=seed, replace=replace)
+                        log('Sampling {} done.'.format(sampling_fn_names[s_idx]))
                         
                     cluster_labels = cell_labels[samp_idx]
                     
@@ -391,6 +396,9 @@ def rare(X_dimred, name, cell_labels, rare_label, n_seeds=10):
     
     for s_idx, sampling_fn in enumerate(sampling_fns):
         
+        if sampling_fn_names[s_idx] == 'dropClust':
+            dropclust_preprocess(name)
+
         for replace in [ True, False ]:
             if sampling_fn_names[s_idx] == 'dropClust' and replace:
                 continue
@@ -398,16 +406,22 @@ def rare(X_dimred, name, cell_labels, rare_label, n_seeds=10):
             counts_means, counts_sems = [], []
 
             for N in Ns:
-                assert(N < X_dimred.shape[0])
+                if N > X_dimred.shape[0]:
+                    continue
+                log('N = {}...'.format(N))
             
                 counts = []
                 
                 for seed in range(n_seeds):
             
                     if sampling_fn_names[s_idx] == 'dropClust':
-                        samp_idx = dropclust('data/' + name, N, seed=seed)
+                        log('Sampling dropClust...')
+                        samp_idx = dropclust_sample('data/' + name, N, seed=seed)
+                        log('Sampling dropClust done.')
                     else:
+                        log('Sampling {}...'.format(sampling_fn_names[s_idx]))
                         samp_idx = sampling_fn(X_dimred, N, seed=seed, replace=replace)
+                        log('Sampling {} done.'.format(sampling_fn_names[s_idx]))
                         
                     cluster_labels = cell_labels[samp_idx]
                     

@@ -25,15 +25,15 @@ if __name__ == '__main__':
     datasets, genes_list, n_cells = load_names(data_names)
     datasets, genes = merge_datasets(datasets, genes_list)
 
-    if not os.path.isfile('data/dimred_{}.txt'.format(NAMESPACE)):
+    if not os.path.isfile('data/dimred/{}.txt'.format(NAMESPACE)):
         log('Scanorama integration...')
         datasets_dimred, genes = process_data(datasets, genes)
         datasets_dimred = assemble(datasets_dimred, knn=100, sigma=50,
                                    batch_size=25000)
         X_dimred = np.concatenate(datasets_dimred)
-        np.savetxt('data/dimred_{}.txt'.format(NAMESPACE), X_dimred)
+        np.savetxt('data/dimred/{}.txt'.format(NAMESPACE), X_dimred)
     else:
-        X_dimred = np.loadtxt('data/dimred_{}.txt'.format(NAMESPACE))
+        X_dimred = np.loadtxt('data/dimred/{}.txt'.format(NAMESPACE))
 
     viz_genes = [
         'CD14', 'PTPRC', 'FCGR3A', 'ITGAX', 'ITGAM', 'CD19', 'HLA-DRB1',

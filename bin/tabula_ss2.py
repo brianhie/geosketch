@@ -50,7 +50,7 @@ def keep_valid(cells):
     with open('data/murine_atlases/tabula_ss2/annotations.csv') as f:
         for line in f:
             fields = line.split(',')
-            cell_to_type[fields[2]] = fields[4]
+            cell_to_type[fields[2]] = fields[4] if fields[4] else 'Other'
 
     cell_labels = []
     valid_idx = []
@@ -76,15 +76,15 @@ if __name__ == '__main__':
     X = vstack(datasets)
     X = X[valid_idx, :]
         
-    if not os.path.isfile('data/dimred_{}_{}.txt'.format(METHOD, NAMESPACE)):
+    if not os.path.isfile('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE)):
         log('Dimension reduction with {}...'.format(METHOD))
         X_dimred = reduce_dimensionality(
             normalize(X), method=METHOD, dimred=DIMRED
         )
         log('Dimensionality = {}'.format(X_dimred.shape[1]))
-        np.savetxt('data/dimred_{}_{}.txt'.format(METHOD, NAMESPACE), X_dimred)
+        np.savetxt('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE), X_dimred)
     else:
-        X_dimred = np.loadtxt('data/dimred_{}_{}.txt'.format(METHOD, NAMESPACE))
+        X_dimred = np.loadtxt('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE))
         
     viz_genes = [
     ]

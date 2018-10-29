@@ -16,22 +16,19 @@ data_names = [
 ]
 
 if __name__ == '__main__':
-    experiment_find_rare(data_names, NAMESPACE)
-    exit()
-    
-    datasets, genes_list, n_cells = load_names(data_names)
-    datasets, genes = merge_datasets(datasets, genes_list)
+    if not os.path.isfile('data/dimred/{}.txt'.format(NAMESPACE)):
+        datasets, genes_list, n_cells = load_names(data_names)
+        datasets, genes = merge_datasets(datasets, genes_list)
 
-    if not os.path.isfile('data/dimred_{}.txt'.format(NAMESPACE)):
         log('Dimension reduction with {}...'.format(METHOD))
         X = vstack(datasets)
         X_dimred = reduce_dimensionality(X, method=METHOD, dimred=DIMRED)
         if METHOD == 'jl_sparse':
             X_dimred = X_dimred.toarray()
         log('Dimensionality = {}'.format(X_dimred.shape[1]))
-        np.savetxt('data/dimred_{}.txt'.format(NAMESPACE), X_dimred)
+        np.savetxt('data/dimred/{}.txt'.format(NAMESPACE), X_dimred)
     else:
-        X_dimred = np.loadtxt('data/dimred_{}.txt'.format(NAMESPACE))
+        X_dimred = np.loadtxt('data/dimred/{}.txt'.format(NAMESPACE))
 
     viz_genes = [
         'Gja1', 'Flt1', 'Gabra6', 'Syt1', 'Gabrb2', 'Gabra1',
@@ -41,6 +38,17 @@ if __name__ == '__main__':
         'Synpr', 'Cacng4', 'Ttr', 'Gpr37', 'C1ql3', 'Fezf2',
     ]
 
+    cell_labels = (
+        open('data/cell_labels/pallium.txt')
+        .read().rstrip().split('\n')
+    )
+    le = LabelEncoder().fit(cell_labels)
+    cell_labels = le.transform(cell_labels)
+    
+    balance(X_dimred, NAMESPACE, cell_labels)
+
+    exit()
+    
     experiment_gs(X_dimred, NAMESPACE,
                   gene_names=viz_genes, genes=genes,
                   gene_expr=vstack(datasets),

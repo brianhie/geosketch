@@ -15,10 +15,10 @@ def log(string):
     sys.stdout.write(string + '\n')
     sys.stdout.flush()
 
-def reduce_dimensionality(X, method='svd', dimred=DIMRED):
+def reduce_dimensionality(X, method='svd', dimred=DIMRED, raw=False):
     if method == 'svd':
         k = min((dimred, X.shape[0], X.shape[1]))
-        U, s, Vt = pca(X, k=k)
+        U, s, Vt = pca(X, k=k, raw=raw)
         return U[:, range(k)] * s[range(k)]
     elif method == 'jl_sparse':
         jls = JLSparse(n_components=dimred)
