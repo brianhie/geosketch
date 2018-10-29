@@ -9,7 +9,7 @@ from utils import log
 
 def gs(X, N, seed=None, replace=True, method='faiss', verbose=False, labels=None):
     k = 10
-    power = 10
+    power = 1
 
     if verbose:
         log('k = {}, power = {}'.format(k, power))
