@@ -9,19 +9,11 @@ from experiments import *
 from process import load_names
 from utils import *
 
-NAMESPACE = 'pbmc_facs'
+NAMESPACE = '293t_jurkat'
 METHOD = 'svd'
 DIMRED = 100
 
-data_names = [
-    'data/pbmc/10x/b_cells',
-    'data/pbmc/10x/cd14_monocytes',
-    'data/pbmc/10x/cd4_t_helper',
-    'data/pbmc/10x/cd56_nk',
-    'data/pbmc/10x/cytotoxic_t',
-    'data/pbmc/10x/memory_t',
-    'data/pbmc/10x/regulatory_t',
-]
+data_names = [ 'data/293t_jurkat/jurkat_293t_99_1' ]
 
 def plot(X, title, labels, bold=None):
     plot_clusters(X, labels)
@@ -34,28 +26,19 @@ if __name__ == '__main__':
     datasets, genes_list, n_cells = load_names(data_names, norm=False)
     datasets, genes = merge_datasets(datasets, genes_list)
     X = vstack(datasets)
-
-    labels = []
-    names = []
-    curr_label = 0
-    for i, a in enumerate(datasets):
-        labels += list(np.zeros(a.shape[0]) + curr_label)
-        names.append(data_names[i])
-        curr_label += 1
-    labels = np.array(labels, dtype=int)
-
+    
     k = DIMRED
     U, s, Vt = pca(normalize(X), k=k)
     X_dimred = U[:, :k] * s[:k]
 
     cell_labels = (
-        open('data/cell_labels/pbmc_facs_cluster.txt')
+        open('data/cell_labels/jurkat_293t_99_1_clusters.txt')
         .read().rstrip().split()
     )
     le = LabelEncoder().fit(cell_labels)
     cell_labels = le.transform(cell_labels)
 
-    rare(X_dimred, NAMESPACE, cell_labels, le.transform(['cd14_monocytes'])[0],
+    rare(X_dimred, NAMESPACE, cell_labels, le.transform(['293t'])[0],
          weights=s[:k])
     
     balance(X_dimred, NAMESPACE, cell_labels, weights=s[:k])

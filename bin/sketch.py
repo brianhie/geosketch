@@ -7,9 +7,121 @@ import sys
 
 from utils import log
 
-def gs(X, N, seed=None, replace=True, method='faiss', verbose=False, labels=None):
+def gs(X, N, k='auto', seed=None, replace=False, weights=None,
+       alpha=0.1, max_iter=200, verbose=0, labels=None):
+    n_samples, n_features = X.shape
+
+    # Error checking and initialization.
+    if not seed is None:
+        np.random.seed(seed)
+    if not replace and N > n_samples:
+        raise ValueError('Cannot sample {} elements from {} elements '
+                         'without replacement'.format(N, n_samples))
+    if not replace and N == n_samples:
+        return range(N)
+    if k == 'auto':
+        k = min(n_samples / 10, int(np.log2(n_samples)))
+    if weights is None:
+        weights = np.ones(n_features, dtype='float32')
+    weights /= sum(weights)
+
+    X = normalize(X - X.min(0), axis=0, norm='max')
+    #X = X - X.min(0)
+
+    low_unit, high_unit = 0., np.max(X)
+    
+    unit = (low_unit + high_unit) / 2.
+
+    n_iter = 0
+    while True:
+
+        grid = {}
+
+        if verbose > 1:
+            log('n_iter = {}'.format(n_iter))
+            
+        for sample_idx in range(n_samples):
+            if verbose > 1:
+                if sample_idx % 10000 == 0:
+                    log('sample_idx = {}'.format(sample_idx))
+            
+            sample = X[sample_idx, :]
+
+            unit_d = unit / weights
+            grid_cell = tuple(np.floor(sample / unit_d).astype(int))
+
+            if grid_cell not in grid:
+                grid[grid_cell] = set()
+            grid[grid_cell].add(sample_idx)
+            
+        if verbose:
+            log('Found {} non-empty grid cells'.format(len(grid)))
+
+        if len(grid) > k * (1 + alpha):
+            # Too many grid cells, increase unit.
+            low_unit = unit
+            if high_unit is None:
+                unit *= 2.
+            else:
+                unit = (unit + high_unit) / 2.
+            
+            if verbose:
+                log('More cells than {}, increase unit to {}'
+                    .format(k * (1 + alpha), unit))
+
+        elif len(grid) < k / (1 + alpha):
+            # Too few grid cells, decrease unit.
+            high_unit = unit
+            if low_unit is None:
+                unit /= 2.
+            else:
+                unit = (unit + low_unit) / 2.
+                
+            if verbose:
+                log('Fewer cells than {}, decrease unit to {}'
+                    .format(k / (1 + alpha), unit))
+        else:
+            break
+
+        if high_unit is not None and low_unit is not None and \
+           high_unit - low_unit < 1e-20:
+            break
+        
+        if n_iter > max_iter:
+            # Should rarely get here.
+            sys.stderr.write('WARNING: Max iterations reached, try increasing '
+                             ' alpha parameter.\n')
+            break
+        n_iter += 1
+
+    if verbose:
+        log('Found {} grid cells'.format(len(grid)))
+
+    #clusters = sorted(set(labels))
+    #for cell in grid:
+    #    samples = grid[cell]
+    #    for cluster in clusters:
+    #        print('Cluster {} has {} samples'.format(
+    #            cluster, np.sum(labels[samples] == cluster))
+    #        )
+    #    print('')
+    
+    gs_idx = []
+    for n in range(N):
+        grid_cells = list(grid.keys())
+        grid_cell = grid_cells[np.random.choice(len(grid_cells))]
+        samples = list(grid[grid_cell])
+        sample = samples[np.random.choice(len(samples))]
+        if not replace:
+            grid[grid_cell].remove(sample)
+            if len(grid[grid_cell]) == 0:
+                del grid[grid_cell]
+        gs_idx.append(sample)
+    
+    return sorted(gs_idx)
+    
+def gs_density(X, N, weights=None, seed=None, replace=True, verbose=False, labels=None):
     k = 10
-    power = 1
 
     if verbose:
         log('k = {}, power = {}'.format(k, power))
@@ -19,33 +131,31 @@ def gs(X, N, seed=None, replace=True, method='faiss', verbose=False, labels=None
     # Error checking and initialization.
     if not seed is None:
         np.random.seed(seed)
-    method = check_method(method)
-    if method == 'faiss':
-        import faiss
     if not replace and N > n_samples:
         raise ValueError('Cannot sample {} elements from {} elements '
                          'without replacement'.format(N, n_samples))
     if not replace and N == n_samples:
         return range(N)
+    if weights is None:
+        dim_weights = np.ones(n_features, dtype='float32')
+    else:
+        dim_weights = weights
+    dim_weights **= round(np.log10(n_features))
+    
     X = np.ascontiguousarray(X, dtype='float32')
+    X /= dim_weights
 
     index = AnnoyIndex(n_features, metric='manhattan')
     for i in range(n_samples):
         index.add_item(i, X[i, :])
     index.build(10)
 
-    #quantizer = faiss.IndexFlatL2(n_features)
-    #index = faiss.IndexIVFFlat(quantizer, n_features, 100, faiss.METRIC_L2)
-    #index.train(X)
-    #index.add(X)
-
     weights = []
     for i in range(n_samples):
         if verbose and i % 20000 == 0:
             log('Process {} samples'.format(i))
-        #dist, idx = index.search(X[i, :].reshape(1, -1), k)
         idx, dist = index.get_nns_by_item(i, k, include_distances=True)
-        weights.append(np.min(dist[1]) ** power)
+        weights.append(np.mean(dist[1:]))
     weights = np.array(weights) / sum(weights)
 
     if labels is not None:
@@ -57,146 +167,6 @@ def gs(X, N, seed=None, replace=True, method='faiss', verbose=False, labels=None
             
     return np.random.choice(range(n_samples), size=N, p=weights, replace=replace)
 
-def gs_binary(X, N, seed=None, replace=False, prenormalized=False, method='faiss',
-              alpha=0.1, max_iter=200, verbose=3, labels=None):
-    n_samples, n_features = X.shape
-
-    # Error checking and initialization.
-    if not seed is None:
-        np.random.seed(seed)
-    method = check_method(method)
-    if method == 'faiss':
-        import faiss
-    if not replace and N > n_samples:
-        raise ValueError('Cannot sample {} elements from {} elements '
-                         'without replacement'.format(N, n_samples))
-    if not replace and N == n_samples:
-        return range(N)
-    X = np.ascontiguousarray(X, dtype='float32')
-
-    rand100 = np.random.choice(n_samples, size=100)
-    dist100 = pairwise_distances(X[rand100, :])
-    radius = np.mean(dist100[dist100 != 0])
-
-    if verbose > 1:
-        log('Initializing radius to {}'.format(radius))
-
-    quantizer = faiss.IndexFlatL2(n_features)
-    index = faiss.IndexIVFFlat(quantizer, n_features, 100, faiss.METRIC_L2)
-    index.train(X)
-    
-    all_samples = set(range(n_samples))
-    filtered_samples = {}
-    centers = []
-
-    low_radius, high_radius = 0., None
-    
-    n_iter = 0
-    while True:
-
-        if verbose > 1:
-            log('n_iter = {}'.format(n_iter))
-
-        permuted_samples = np.random.permutation(
-            list(all_samples - set(filtered_samples.keys()))
-        )
-        
-        for sample_idx, sample in enumerate(permuted_samples):
-            if verbose > 1:
-                if sample_idx % 10000 == 0:
-                    log('sample_idx = {}'.format(sample_idx))
-            
-            x_sample = X[sample, :].reshape(1, -1)
-            if len(filtered_samples) > 1:
-                dist, idx = index.search(x_sample, 1)
-                if dist[0][0] > radius:
-                    # Use sample as new cluster center in data structure.
-                    index.add(x_sample)
-                    filtered_samples[sample] = [ sample ]
-                    centers.append(sample)
-                else:
-                    # Add sample to cluster.
-                    filtered_samples[centers[idx[0][0]]].append(sample)
-            else:
-                # Initialize data structure.
-                index.add(x_sample)
-                filtered_samples[sample] = [ sample ]
-                centers.append(sample)
-
-        if verbose:
-            log('Found {} cluster centers'.format(len(filtered_samples)))
-
-        if len(filtered_samples) > N * (1 + alpha):
-            # Too many cluster centers, increase cluster radius and try again.
-            if verbose:
-                log('More clusters than {}, increase radius to {}'
-                    .format(N * (1 + alpha), radius * 2. if high_radius is None else
-                            (high_radius + radius) / 2.))
-
-            low_radius = radius
-            if high_radius is None:
-                radius *= 2.
-            else:
-                radius = (high_radius + radius) / 2.
-                
-            index = faiss.IndexHNSWFlat(n_features, 32)
-            #all_samples = set(filtered_samples.keys())
-            filtered_samples = {}
-            centers = []
-
-        elif len(filtered_samples) < N / (1 + alpha):
-            # Too few cluster centers, decrease cluster radius and add more points.
-            if verbose:
-                log('Fewer clusters than {}, decrease radius to {}'
-                    .format(N / (1 + alpha), (radius + low_radius) / 2.))
-
-            high_radius = radius
-            radius = (radius + low_radius) / 2.
-
-        else:
-            break
-
-        if n_iter > max_iter:
-            # Should rarely get here.
-            sys.stderr.write('WARNING: Max iterations reached, try increasing '
-                             ' alpha parameter.\n')
-            break
-        n_iter += 1
-
-    log('Found {} cluster centers'.format(len(filtered_samples)))
-
-    clusters = sorted(set(labels))
-    
-    for center in filtered_samples:
-        samples = labels[filtered_samples[center]]
-        for cluster in clusters:
-            print('cluster has {} in center {}'
-                  .format(sum(samples == cluster), center))
-        print('')
-    exit()
-        
-    # Sample `N' cluster centers.
-    centers = list(filtered_samples.keys())
-    weights = np.array([ 1. / len(filtered_samples[center]) for center in centers ])
-    N_centers = np.random.choice(centers, size=N, p=(weights / np.sum(weights)))
-    
-#    if len(filtered_samples) < N:
-#        center_idx = range(len(centers))
-#        center_idx += list(np.random.choice(
-#            range(len(centers)), size=(N - len(filtered_samples))
-#        ))
-#    else:
-#        center_idx = np.random.choice(range(len(centers)), size=N, replace=True)
-
-    
-    # For `N' cluster centers, sample a point near that center.
-    gs_idx = []
-    for center in N_centers:
-        samples = filtered_samples[center]
-        gs_idx.append(np.random.choice(samples, size=1)[0])
-
-    return sorted(gs_idx)
-    
 def gs1(X, N, seed=None, replace=False, prenormalized=False):
     try:
         import faiss
@@ -218,6 +188,9 @@ def gs1(X, N, seed=None, replace=False, prenormalized=False):
     if not seed is None:
         np.random.seed(seed)
 
+    X_mean = np.mean(X, axis=0)
+    X_std = np.std(X, axis=0)
+        
     #if not prenormalized:
     #    X = normalize(X, norm='l2', axis=1)
     X = np.ascontiguousarray(X, dtype='float32')
@@ -234,8 +207,7 @@ def gs1(X, N, seed=None, replace=False, prenormalized=False):
     n_retries = N
     for i in range(N):
         for j in range(n_retries):
-            query = np.random.normal(size=(n_features))
-            #query = query / np.linalg.norm(query)
+            query = np.random.normal(loc=X_mean, scale=X_std, size=n_features)
             query = query.reshape(1, -1).astype('float32')
             _, I = index.search(query, 1)
             assert(len(I) == 1)
@@ -409,7 +381,7 @@ def srs(X, N, seed=None, replace=False, prenormalized=False):
 
     return srs_idx
 
-def uniform(X, N, seed=None, replace=False):
+def uniform(X, N, seed=None, replace=False, weights=None):
     n_samples, n_features = X.shape
 
     if not replace and N > n_samples:

@@ -216,7 +216,8 @@ def experiment(sampling_fn, X_dimred, name, cell_labels=None,
                kmeans=True, visualize_orig=True,
                downsample=True, n_downsample=100000,
                gene_names=None, gene_expr=None, genes=None,
-               perplexity=500, kmeans_k=10, sample_type=''):
+               perplexity=500, kmeans_k=10, sample_type='',
+               weights=None):
 
     # Assign cells to clusters.
 
@@ -276,7 +277,7 @@ def experiment(sampling_fn, X_dimred, name, cell_labels=None,
             continue
 
         log('Sampling {}...'.format(N))
-        samp_idx = sampling_fn(X_dimred, N)
+        samp_idx = sampling_fn(X_dimred, N, weights=weights)
         log('Found {} entries'.format(len(set(samp_idx))))
 
         log('Visualizing sampled...')
@@ -309,7 +310,7 @@ def normalized_entropy(counts):
     
     return H / np.log(k)
     
-def balance(X_dimred, name, cell_labels, n_seeds=10):
+def balance(X_dimred, name, cell_labels, n_seeds=10, weights=None):
     Ns = [ 100, 500, 1000, 5000, 10000, 20000 ]
 
     clusters = set(cell_labels)
@@ -347,7 +348,8 @@ def balance(X_dimred, name, cell_labels, n_seeds=10):
                         log('Sampling dropClust done.')
                     else:
                         log('Sampling {}...'.format(sampling_fn_names[s_idx]))
-                        samp_idx = sampling_fn(X_dimred, N, seed=seed, replace=replace)
+                        samp_idx = sampling_fn(X_dimred, N, seed=seed,
+                                               replace=replace, weights=weights)
                         log('Sampling {} done.'.format(sampling_fn_names[s_idx]))
                         
                     cluster_labels = cell_labels[samp_idx]
@@ -371,10 +373,10 @@ def balance(X_dimred, name, cell_labels, n_seeds=10):
     for s_idx in range(len(sampling_fns) * 2):
         entropies_means = sampling_entropies_means[s_idx]
         entropies_sems = sampling_entropies_sems[s_idx]
-        plt.plot(Ns, entropies_means, color=colors[s_idx / 2],
+        plt.plot(Ns[:len(entropies_means)], entropies_means, color=colors[s_idx / 2],
                  linestyle=('solid' if s_idx % 2 == 0 else 'dashed'))
-        plt.scatter(Ns, entropies_means, color=colors[s_idx / 2])
-        plt.fill_between(Ns, entropies_means - entropies_sems,
+        plt.scatter(Ns[:len(entropies_means)], entropies_means, color=colors[s_idx / 2])
+        plt.fill_between(Ns[:len(entropies_means)], entropies_means - entropies_sems,
                          entropies_means + entropies_sems, alpha=0.3,
                          color=colors[s_idx / 2])
     plt.title('Entropies')
@@ -382,7 +384,7 @@ def balance(X_dimred, name, cell_labels, n_seeds=10):
     
     plt.show()
     
-def rare(X_dimred, name, cell_labels, rare_label, n_seeds=10):
+def rare(X_dimred, name, cell_labels, rare_label, n_seeds=10, weights=None):
     Ns = [ 100, 500, 1000, 5000, 10000, 20000 ]
 
     clusters = set(cell_labels)
@@ -420,12 +422,14 @@ def rare(X_dimred, name, cell_labels, rare_label, n_seeds=10):
                         log('Sampling dropClust done.')
                     else:
                         log('Sampling {}...'.format(sampling_fn_names[s_idx]))
-                        samp_idx = sampling_fn(X_dimred, N, seed=seed, replace=replace)
+                        samp_idx = sampling_fn(X_dimred, N, seed=seed,
+                                               replace=replace, weights=weights)
                         log('Sampling {} done.'.format(sampling_fn_names[s_idx]))
                         
                     cluster_labels = cell_labels[samp_idx]
                     
                     counts.append(sum(cluster_labels == rare_label))
+                    print(counts[-1])
 
                 counts_means.append(np.mean(counts))
                 counts_sems.append(scipy.stats.sem(counts))
@@ -439,10 +443,10 @@ def rare(X_dimred, name, cell_labels, rare_label, n_seeds=10):
     for s_idx in range(len(sampling_fns) * 2):
         counts_means = sampling_counts_means[s_idx]
         counts_sems = sampling_counts_sems[s_idx]
-        plt.plot(Ns, counts_means, color=colors[s_idx / 2],
+        plt.plot(Ns[:len(counts_means)], counts_means, color=colors[s_idx / 2],
                  linestyle=('solid' if s_idx % 2 == 0 else 'dashed'))
-        plt.scatter(Ns, counts_means, color=colors[s_idx / 2])
-        plt.fill_between(Ns, counts_means - counts_sems,
+        plt.scatter(Ns[:len(counts_means)], counts_means, color=colors[s_idx / 2])
+        plt.fill_between(Ns[:len(counts_means)], counts_means - counts_sems,
                          counts_means + counts_sems, alpha=0.3,
                          color=colors[s_idx / 2])
     plt.title('Rare cell type counts')

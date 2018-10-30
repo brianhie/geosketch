@@ -12,8 +12,8 @@ from utils import *
 np.random.seed(0)
 
 NAMESPACE = 'mouse_brain_raw'
-METHOD = 'hvg'
-DIMRED = 1000
+METHOD = 'svd'
+DIMRED = 100
 
 data_names = [
     'data/mouse_brain/dropviz/Cerebellum_ALT',
@@ -51,11 +51,16 @@ if __name__ == '__main__':
     datasets, genes = merge_datasets(datasets, genes_list)
     X = vstack(datasets)
 
-    log('Dimension reduction with {}...'.format(METHOD))
-    X_dimred = reduce_dimensionality(
-        normalize(X, norm='l1'), method='svd', dimred=3
-    )
-    log('Dimensionality = {}'.format(X_dimred.shape[1]))
+    from fbpca import pca
+    k = 100
+    U, s, Vt = pca(normalize(X), k=k)
+    X_dimred = U[:, :k] * s[:k]
+    
+    #log('Dimension reduction with {}...'.format(METHOD))
+    #X_dimred = reduce_dimensionality(
+    #    normalize(X, norm='l1'), method='svd', dimred=10
+    #)
+    #log('Dimensionality = {}'.format(X_dimred.shape[1]))
     
     #if not os.path.isfile('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE)):
     #    log('Dimension reduction with {}...'.format(METHOD))
@@ -82,9 +87,9 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(cell_labels)
     cell_labels = le.transform(cell_labels)
 
-    rare(X_dimred, NAMESPACE, cell_labels, le.transform(['Choroid_Plexus'])[0])
+    rare(X_dimred, NAMESPACE, cell_labels, le.transform(['Choroid_Plexus'])[0], weights=s[:k])
     
-    balance(X_dimred, NAMESPACE, cell_labels)
+    balance(X_dimred, NAMESPACE, cell_labels, weights=s[:k])
     
     exit()
     
