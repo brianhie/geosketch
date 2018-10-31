@@ -434,6 +434,9 @@ def rare(X_dimred, name, cell_labels, rare_label, n_seeds=10, weights=None):
                 counts_means.append(np.mean(counts))
                 counts_sems.append(scipy.stats.sem(counts))
 
+                log(np.mean(counts))
+                log(scipy.stats.sem(counts))
+
             sampling_counts_means.append(np.array(counts_means))
             sampling_counts_sems.append(np.array(counts_sems))
 

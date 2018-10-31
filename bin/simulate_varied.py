@@ -57,18 +57,20 @@ if __name__ == '__main__':
     print(X_dimred.max(0) - X_dimred.min(0))
     print(s[:k])
     
-    from sketch import gs
-    gs_idx = gs(X_dimred, 1000, verbose=3)
-    report_cluster_counts(cell_labels[gs_idx])
-    gs_idx = gs(X_dimred, 1000, verbose=3, weights=s[:k])
-    report_cluster_counts(cell_labels[gs_idx])
-    #plot(X_dimred, 'pca', cell_labels, bold=gs_idx)
-    exit()
+    #from sketch import gs
+    #for N in [ 100, 1000, 2000, 5000, 10000, 20000, 30000, 40000 ]:
+    #    gs(X_dimred, N, k=N)
+    #exit()
 
-    rare(X_dimred, NAMESPACE, cell_labels, le.transform(['Group4'])[0],
-         weights=s[:k])
+    #from sketch import gs
+    #gs_idx = gs(X_dimred, 1000, verbose=3)
+    #report_cluster_counts(cell_labels[gs_idx])
+    #plot(X_dimred, 'pca', cell_labels, bold=gs_idx)
+    #exit()
+
+    rare(X_dimred, NAMESPACE, cell_labels, le.transform(['Group4'])[0])
     
-    balance(X_dimred, NAMESPACE, cell_labels, weights=s[:k])
+    balance(X_dimred, NAMESPACE, cell_labels)
     
     experiment_gs(X_dimred, NAMESPACE, cell_labels=cell_labels,
                   kmeans=False, visualize_orig=False, weights=s[:k])

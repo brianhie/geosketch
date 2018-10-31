@@ -9,7 +9,7 @@ from experiments import *
 from process import load_names
 from utils import *
 
-NAMESPACE = '293t_jurkat'
+NAMESPACE = 'artificial'
 METHOD = 'svd'
 DIMRED = 100
 
@@ -38,6 +38,7 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(cell_labels)
     cell_labels = le.transform(cell_labels)
 
-    rare(X_dimred, NAMESPACE, cell_labels, le.transform(['293t'])[0])
+    rare(X_dimred, NAMESPACE, cell_labels, le.transform(['293t'])[0],
+         weights=s[:k])
     
-    balance(X_dimred, NAMESPACE, cell_labels)
+    balance(X_dimred, NAMESPACE, cell_labels, weights=s[:k])

@@ -8,7 +8,7 @@ import sys
 from utils import log
 
 def gs(X, N, k='auto', seed=None, replace=False, weights=None,
-       alpha=0.1, max_iter=200, verbose=0, labels=None):
+       alpha=0.1, max_iter=200, verbose=1, labels=None):
     n_samples, n_features = X.shape
 
     # Error checking and initialization.
@@ -20,26 +20,28 @@ def gs(X, N, k='auto', seed=None, replace=False, weights=None,
     if not replace and N == n_samples:
         return range(N)
     if k == 'auto':
-        k = min(n_samples / 10, int(np.log2(n_samples)))
+        k = int(np.sqrt(n_samples))
     if weights is None:
         weights = np.ones(n_features, dtype='float32')
     weights /= sum(weights)
 
-    X = normalize(X - X.min(0), axis=0, norm='max')
-    #X = X - X.min(0)
+    X -= X.min(0)
+    X /= X.max()
 
     low_unit, high_unit = 0., np.max(X)
     
-    unit = (low_unit + high_unit) / 2.
+    unit = (low_unit + high_unit) / 4.
 
     n_iter = 0
     while True:
 
-        grid = {}
-
         if verbose > 1:
             log('n_iter = {}'.format(n_iter))
-            
+
+        grid = {}
+
+        unit_d = unit / weights
+
         for sample_idx in range(n_samples):
             if verbose > 1:
                 if sample_idx % 10000 == 0:
@@ -47,16 +49,15 @@ def gs(X, N, k='auto', seed=None, replace=False, weights=None,
             
             sample = X[sample_idx, :]
 
-            unit_d = unit / weights
             grid_cell = tuple(np.floor(sample / unit_d).astype(int))
 
             if grid_cell not in grid:
                 grid[grid_cell] = set()
             grid[grid_cell].add(sample_idx)
-            
+
         if verbose:
             log('Found {} non-empty grid cells'.format(len(grid)))
-
+            
         if len(grid) > k * (1 + alpha):
             # Too many grid cells, increase unit.
             low_unit = unit
@@ -66,8 +67,8 @@ def gs(X, N, k='auto', seed=None, replace=False, weights=None,
                 unit = (unit + high_unit) / 2.
             
             if verbose:
-                log('More cells than {}, increase unit to {}'
-                    .format(k * (1 + alpha), unit))
+                log('Grid size {}, increase unit to {}'
+                    .format(len(grid), unit))
 
         elif len(grid) < k / (1 + alpha):
             # Too few grid cells, decrease unit.
@@ -78,8 +79,8 @@ def gs(X, N, k='auto', seed=None, replace=False, weights=None,
                 unit = (unit + low_unit) / 2.
                 
             if verbose:
-                log('Fewer cells than {}, decrease unit to {}'
-                    .format(k / (1 + alpha), unit))
+                log('Grid size {}, decrease unit to {}'
+                    .format(len(grid), unit))
         else:
             break
 
@@ -87,7 +88,7 @@ def gs(X, N, k='auto', seed=None, replace=False, weights=None,
            high_unit - low_unit < 1e-20:
             break
         
-        if n_iter > max_iter:
+        if n_iter >= max_iter:
             # Should rarely get here.
             sys.stderr.write('WARNING: Max iterations reached, try increasing '
                              ' alpha parameter.\n')
@@ -96,7 +97,7 @@ def gs(X, N, k='auto', seed=None, replace=False, weights=None,
 
     if verbose:
         log('Found {} grid cells'.format(len(grid)))
-
+                
     #clusters = sorted(set(labels))
     #for cell in grid:
     #    samples = grid[cell]
@@ -117,9 +118,21 @@ def gs(X, N, k='auto', seed=None, replace=False, weights=None,
             if len(grid[grid_cell]) == 0:
                 del grid[grid_cell]
         gs_idx.append(sample)
-    
+
     return sorted(gs_idx)
+
+def norm_entropy(grid, n_samples):
+    k = len(grid)
+    if k <= 1:
+        return 0
     
+    n_samples = float(n_samples)
+    
+    H = -sum([ (len(grid[cell]) / n_samples) * np.log(len(grid[cell]) / n_samples)
+               for cell in grid ])
+    
+    return H / np.log(k)
+
 def gs_density(X, N, weights=None, seed=None, replace=True, verbose=False, labels=None):
     k = 10
 
