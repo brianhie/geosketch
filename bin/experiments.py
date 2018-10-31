@@ -4,9 +4,11 @@ from scanorama import *
 from scipy.sparse import vstack
 from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score
+from sklearn.metrics import pairwise_distances
 from sklearn.preprocessing import LabelEncoder
 from subprocess import Popen
 import sys
+from time import time
 
 from process import load_names
 from save_mtx import save_mtx
@@ -383,19 +385,53 @@ def balance(X_dimred, name, cell_labels, n_seeds=10, weights=None):
     plt.savefig('{}_entropies.svg'.format(name))
     
     plt.show()
+
+def err_exit(param_name):
+    sys.stderr.write('Needs `{}\' param.\n'.format(param_name))
+    exit(1)
     
-def rare(X_dimred, name, cell_labels, rare_label, n_seeds=10, weights=None):
+def experiment(X_dimred, name, n_seeds=10, **kwargs):
+
+    if 'rare' in kwargs and kwargs['rare']:
+        if not 'cell_labels' in kwars:
+            err_exit('cell_labels')
+        if not 'rare_label' in kwargs:
+            err_exit('rare_label')
+            
+    if 'entropy' in kwargs and kwargs['entropy']:
+        if not 'cell_labels' in kwars:
+            err_exit('cell_labels')
+
+    if 'cross_entropy' in kwargs and kwargs['cross_entropy']:
+        if not 'expected' in kwargs:
+            err_exit('expected')
+
+    of = open('target/experiments/{}.txt'.format(name), 'w')
+    
     Ns = [ 100, 500, 1000, 5000, 10000, 20000 ]
 
-    clusters = set(cell_labels)
-    max_cluster = max(clusters)
-                
-    sampling_fns = [ gs, uniform, ]#dropclust ]
-    sampling_fn_names = [ 'GS', 'Uniform', ]#'dropClust' ]
-
-    sampling_counts_means = []
-    sampling_counts_sems = []
+    sampling_fns = [
+        gs,
+        uniform,
+        kmeans,
+        kmeanspp,
+        louvain1,
+        louvain3,
+        dropclust
+    ]
     
+    sampling_fn_names = [
+        'geometric_sketching',
+        'uniform',
+        'kmeans',
+        'kemans++',
+        'louvain1',
+        'louvain3',
+        'dropClust',
+    ]
+
+    assert(len(sampling_fns) == len(sampling_fn_names))
+
     for s_idx, sampling_fn in enumerate(sampling_fns):
         
         if sampling_fn_names[s_idx] == 'dropClust':
@@ -415,47 +451,81 @@ def rare(X_dimred, name, cell_labels, rare_label, n_seeds=10, weights=None):
                 counts = []
                 
                 for seed in range(n_seeds):
-            
+
                     if sampling_fn_names[s_idx] == 'dropClust':
                         log('Sampling dropClust...')
+                        t0 = time()
                         samp_idx = dropclust_sample('data/' + name, N, seed=seed)
+                        t1 = time()
                         log('Sampling dropClust done.')
                     else:
                         log('Sampling {}...'.format(sampling_fn_names[s_idx]))
+                        t0 = time()
                         samp_idx = sampling_fn(X_dimred, N, seed=seed,
                                                replace=replace, weights=weights)
+                        t1 = time()
                         log('Sampling {} done.'.format(sampling_fn_names[s_idx]))
-                        
-                    cluster_labels = cell_labels[samp_idx]
+
+                    kwargs['sampling_fn'] = sampling_fn_names[s_idx]
+                    kwargs['replace'] = replace
+                    kwargs['N'] = N
+                    kwargs['seed'] = seed
+                    kwargs['time'] = t1 - t0
                     
-                    counts.append(sum(cluster_labels == rare_label))
-                    print(counts[-1])
+                    experiment_stats(of, X_dimred, samp_idx, name, **kwargs)
 
-                counts_means.append(np.mean(counts))
-                counts_sems.append(scipy.stats.sem(counts))
+    of.close()
 
-                log(np.mean(counts))
-                log(scipy.stats.sem(counts))
+    #colors = [ '#377eb8', '#ff7f00', '#4daf4a', '#f781bf' ]
+    #        
+    #plt.figure()
+    #for s_idx in range(len(sampling_fns) * 2):
+    #    counts_means = sampling_counts_means[s_idx]
+    #    counts_sems = sampling_counts_sems[s_idx]
+    #    plt.plot(Ns[:len(counts_means)], counts_means, color=colors[s_idx / 2],
+    #             linestyle=('solid' if s_idx % 2 == 0 else 'dashed'))
+    #    plt.scatter(Ns[:len(counts_means)], counts_means, color=colors[s_idx / 2])
+    #    plt.fill_between(Ns[:len(counts_means)], counts_means - counts_sems,
+    #                     counts_means + counts_sems, alpha=0.3,
+    #                     color=colors[s_idx / 2])
+    #plt.title('Rare cell type counts')
+    #plt.savefig('{}_rare_counts.svg'.format(name))
+    #
+    #plt.show()
 
-            sampling_counts_means.append(np.array(counts_means))
-            sampling_counts_sems.append(np.array(counts_sems))
+def experiment_stats(of, X_dimred, samp_idx, name, **kwargs):
+    stats = [
+        name,
+        kwargs['sampling_fn'],
+        kwargs['replace'],
+        kwargs['N'],
+        kwargs['seed'],
+        kwargs['time'],
+    ]
 
-    colors = [ '#377eb8', '#ff7f00', '#4daf4a', '#f781bf' ]
-            
-    plt.figure()
-    for s_idx in range(len(sampling_fns) * 2):
-        counts_means = sampling_counts_means[s_idx]
-        counts_sems = sampling_counts_sems[s_idx]
-        plt.plot(Ns[:len(counts_means)], counts_means, color=colors[s_idx / 2],
-                 linestyle=('solid' if s_idx % 2 == 0 else 'dashed'))
-        plt.scatter(Ns[:len(counts_means)], counts_means, color=colors[s_idx / 2])
-        plt.fill_between(Ns[:len(counts_means)], counts_means - counts_sems,
-                         counts_means + counts_sems, alpha=0.3,
-                         color=colors[s_idx / 2])
-    plt.title('Rare cell type counts')
-    plt.savefig('{}_rare_counts.svg'.format(name))
-    
-    plt.show()
+    if 'rare' in kwargs and kwargs['rare']:
+        cell_labels = kwargs['cell_labels']
+        rare_label = kwargs['rare_label']
+        cluster_labels = cell_labels[samp_idx]
+        stats.append(sum(cluster_labels == rare_label))
+
+    if 'entropy' in kwargs and kwargs['entropy']:
+        cell_labels = kwargs['cell_labels']
+        cluster_labels = cell_labels[samp_idx]
+        clusters = sorted(set(cell_labels))
+        max_cluster = max(clusters)
+        cluster_hist = np.zeros(max_cluster + 1)
+        for c in range(max_cluster + 1):
+            if c in clusters:
+                cluster_hist[c] = sum(cluster_labels == c)
+        stats.append(normalized_entropy(cluster_hist))
+
+    if 'cross_entropy' in kwargs and kwargs['cross_entropy']:
+        expected = kwargs['expected']
+
+    if 'max_min_dist' in kwargs and kwargs['max_min_dist']:
+        dist = pairwise_distances(X_dimred[samp_idx, :])
+        stats.append(min(dist.max(1)))
     
 def seurat_cluster(name):
     rcode = Popen('Rscript R/seurat.R {0} > {0}.log 2>&1'
