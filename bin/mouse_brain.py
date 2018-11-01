@@ -87,9 +87,9 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(cell_labels)
     cell_labels = le.transform(cell_labels)
 
-    rare(X_dimred, NAMESPACE, cell_labels, le.transform(['Choroid_Plexus'])[0], weights=s[:k])
+    rare(X_dimred, NAMESPACE, cell_labels, le.transform(['Choroid_Plexus'])[0])
     
-    balance(X_dimred, NAMESPACE, cell_labels, weights=s[:k])
+    balance(X_dimred, NAMESPACE, cell_labels)
     
     exit()
     

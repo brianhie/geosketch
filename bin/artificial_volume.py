@@ -1,4 +1,5 @@
 from fbpca import pca
+import math
 import numpy as np
 import os
 from scanorama import *
@@ -34,9 +35,13 @@ if __name__ == '__main__':
     X_dimred = np.concatenate(Xs)
     cell_labels = np.array(labels, dtype=int)
 
-    from simulate_varied import plot
-    plot(X_dimred, 'pca', cell_labels)
-
-    rare(X_dimred, NAMESPACE, cell_labels, 2)
-    
-    balance(X_dimred, NAMESPACE, cell_labels)
+    expected = np.array([ 1, 1/10., 1/100.])
+    expected = np.array(expected) / sum(expected)
+        
+    experiments(
+        X_dimred, NAMESPACE,
+        rare=True, cell_labels=cell_labels, rare_label=2,
+        entropy=True,
+        kl_divergence=True, expected=expected,
+        max_min_dist=True
+    )

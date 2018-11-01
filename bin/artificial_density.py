@@ -37,6 +37,11 @@ if __name__ == '__main__':
     X_dimred = np.concatenate(Xs)
     cell_labels = np.array(labels, dtype=int)
 
+    from sketch import gs, gs_exact
+    gs_idx = gs_exact(X_dimred, 1000, verbose=1, replace=True)
+    report_cluster_counts(cell_labels[gs_idx])
+    exit()
+    
     from simulate_varied import plot
     plot(X_dimred, 'pca', cell_labels)
 

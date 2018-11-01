@@ -5,10 +5,11 @@ from sklearn.preprocessing import normalize
 from sklearn.metrics.pairwise import pairwise_distances
 import sys
 
+from kmeanspp import kmeanspp
 from utils import log
 
-def gs(X, N, k='auto', seed=None, replace=False, weights=None,
-       alpha=0.1, max_iter=200, verbose=1, labels=None):
+def gs(X, N, k='auto', seed=None, replace=False,
+       alpha=0.1, max_iter=200, verbose=0, labels=None):
     n_samples, n_features = X.shape
 
     # Error checking and initialization.
@@ -21,9 +22,6 @@ def gs(X, N, k='auto', seed=None, replace=False, weights=None,
         return range(N)
     if k == 'auto':
         k = int(np.sqrt(n_samples))
-    if weights is None:
-        weights = np.ones(n_features, dtype='float32')
-    weights /= sum(weights)
 
     X -= X.min(0)
     X /= X.max()
@@ -40,7 +38,7 @@ def gs(X, N, k='auto', seed=None, replace=False, weights=None,
 
         grid = {}
 
-        unit_d = unit / weights
+        unit_d = unit * n_features
 
         for sample_idx in range(n_samples):
             if verbose > 1:
@@ -120,6 +118,43 @@ def gs(X, N, k='auto', seed=None, replace=False, weights=None,
         gs_idx.append(sample)
 
     return sorted(gs_idx)
+
+def gs_exact(X, N, k='auto', seed=None, replace=False,
+             tol=1e-3, n_iter=300, verbose=1):
+    ge_idx = np.random.choice(X.shape[0], size=N, replace=False)
+    
+    dist = pairwise_distances(X, n_jobs=-1)
+
+    cost = dist.max()
+
+    iter_i = 0
+    
+    while iter_i < n_iter:
+
+        if verbose:
+            log('iter_i = {}'.format(iter_i))
+            log('cost = {}'.format(cost))
+
+        labels = np.argmin(dist[ge_idx, :], axis=0)
+
+        ge_idx = []
+        for cluster in range(N):
+            cluster_idx = np.nonzero(labels == cluster)[0]
+            X_cluster = dist[cluster_idx, :]
+            X_cluster = X_cluster[:, cluster_idx]
+            within_idx = np.argmin(X_cluster.max(0))
+            ge_idx.append(cluster_idx[within_idx])
+
+        cost, prev_cost = dist[ge_idx, :].min(0).max(), cost
+        assert(cost <= prev_cost)
+
+        if prev_cost - cost < tol:
+            break
+
+        iter_i += 1
+
+    return ge_idx
+        
 
 def norm_entropy(grid, n_samples):
     k = len(grid)
@@ -394,7 +429,7 @@ def srs(X, N, seed=None, replace=False, prenormalized=False):
 
     return srs_idx
 
-def uniform(X, N, seed=None, replace=False, weights=None):
+def uniform(X, N, seed=None, replace=False):
     n_samples, n_features = X.shape
 
     if not replace and N > n_samples:
@@ -408,6 +443,61 @@ def uniform(X, N, seed=None, replace=False, weights=None):
         
     return list(np.random.choice(n_samples, size=N, replace=replace))
 
+def kmeans(X, N, seed=None, replace=False):
+    from sklearn.cluster import KMeans
+
+    km = KMeans(n_clusters=N, init='random', n_init=1,
+                random_state=seed)
+    km.fit(X)
+
+    index = AnnoyIndex(X.shape[1], metric='euclidean')
+    for i in range(X.shape[0]):
+        index.add_item(i, X[i, :])
+    index.build(10)
+
+    km_idx = []
+    for i in range(N):
+        centroid = km.cluster_centers_[i, :]
+        idx = index.get_nns_by_vector(centroid, 1)[0]
+        km_idx.append(idx)
+
+    return km_idx
+
+def louvain1(X, N, seed=None, replace=False):
+    return louvain(X, N, resolution=1, seed=seed, replace=replace)
+
+def louvain3(X, N, seed=None, replace=False):
+    return louvain(X, N, resolution=3, seed=seed, replace=replace)
+    
+def louvain(X, N, resolution=1, seed=None, replace=False):
+    from anndata import AnnData
+    import scanpy.api as sc
+    
+    adata = AnnData(X=X)
+    sc.pp.neighbors(adata, use_rep='X')
+    sc.tl.louvain(adata, resolution=resolution, key_added='louvain')
+    cluster_labels_full = adata.obs['louvain'].tolist()
+
+    louv = {}
+    for i, cluster in enumerate(cluster_labels_full):
+        if cluster not in louv:
+            louv[cluster] = []
+        louv[cluster].append(i)
+    
+    lv_idx = []
+    for n in range(N):
+        louv_cells = list(louv.keys())
+        louv_cell = louv_cells[np.random.choice(len(louv_cells))]
+        samples = list(louv[louv_cell])
+        sample = samples[np.random.choice(len(samples))]
+        if not replace:
+            louv[louv_cell].remove(sample)
+            if len(louv[louv_cell]) == 0:
+                del louv[louv_cell]
+        lv_idx.append(sample)
+
+    return lv_idx
+    
 def label(X, sites, site_labels, approx=True):
     if approx:
         return label_approx(X, sites, site_labels)

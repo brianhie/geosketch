@@ -1,6 +1,7 @@
 from sklearn.cluster.k_means_ import *
 
-def kmeanspp(X, n_clusters, n_local_trials=None):
+def kmeanspp(X, n_clusters, seed=None, replace=False,
+             n_local_trials=1):
     n_samples, n_features = X.shape
 
     x_squared_norms = row_norms(X, squared=True)
