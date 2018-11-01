@@ -496,7 +496,7 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
     if 'max_min_dist' in kwargs and kwargs['max_min_dist']:
         columns.append('max_min_dist')
         
-    of = open('target/experiments/{}.txt'.format(name), 'w')
+    of = open('target/experiments/{}.txt'.format(name), 'a')
     of.write('\t'.join(columns) + '\n')
     
     Ns = [ 100, 500, 1000, 5000, 10000, 20000 ]
@@ -504,6 +504,7 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
     sampling_fns = [
         uniform,
         gs,
+        gs_gap,
         srs,
         louvain1,
         louvain3,
@@ -517,6 +518,7 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
     sampling_fn_names = [
         'uniform',
         'geometric_sketching',
+        'gs_gap',
         'srs',
         'louvain1',
         'louvain3',

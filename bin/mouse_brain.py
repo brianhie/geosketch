@@ -87,11 +87,19 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(cell_labels)
     cell_labels = le.transform(cell_labels)
 
+    experiments(
+        X_dimred, NAMESPACE,
+        rare=True, cell_labels=cell_labels,
+        rare_label=le.transform(['Choroid_Plexus'])[0],
+        entropy=True,
+        max_min_dist=True
+    )
+    
+    exit()
+    
     rare(X_dimred, NAMESPACE, cell_labels, le.transform(['Choroid_Plexus'])[0])
     
     balance(X_dimred, NAMESPACE, cell_labels)
-    
-    exit()
     
     experiment_gs(X_dimred, NAMESPACE, cell_labels=cell_labels,
                   kmeans=False, visualize_orig=False)

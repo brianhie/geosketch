@@ -158,6 +158,126 @@ def gs_exact(X, N, k='auto', seed=None, replace=False,
 
     return ge_idx
 
+def gs_gap(X, N, k='auto', seed=None, replace=False,
+           alpha=0.1, max_iter=200, verbose=0, labels=None):
+    n_samples, n_features = X.shape
+
+    # Error checking and initialization.
+    if not seed is None:
+        np.random.seed(seed)
+    if not replace and N > n_samples:
+        raise ValueError('Cannot sample {} elements from {} elements '
+                         'without replacement'.format(N, n_samples))
+    if not replace and N == n_samples:
+        return range(N)
+    if k == 'auto':
+        k = int(np.sqrt(n_samples))
+
+    X -= X.min(0)
+    X /= X.max()
+
+    low_unit, high_unit = 0., np.max(X)
+    
+    unit = (low_unit + high_unit) / 4.
+
+    n_iter = 0
+    while True:
+
+        if verbose > 1:
+            log('n_iter = {}'.format(n_iter))
+
+        grid = {}
+
+        unit_d = unit * n_features
+
+        grid_table = np.zeros((n_samples, n_features))
+
+        for d in range(n_features):
+            points_d = X[:, d]
+
+            curr_start = None
+            curr_interval = 0
+            for sample_idx in np.argsort(points_d):
+                if curr_start is None or \
+                   curr_start + unit_d < points_d[sample_idx]:
+                    curr_start = points_d[sample_idx]
+                    curr_interval += 1
+                grid_table[sample_idx, d] = curr_interval
+
+        for sample_idx in range(n_samples):
+            grid_cell = tuple(grid_table[sample_idx, :])
+            if grid_cell not in grid:
+                grid[grid_cell] = []
+            grid[grid_cell].append(sample_idx)
+
+        del grid_table
+
+        if verbose:
+            log('Found {} non-empty grid cells'.format(len(grid)))
+            
+        if len(grid) > k * (1 + alpha):
+            # Too many grid cells, increase unit.
+            low_unit = unit
+            if high_unit is None:
+                unit *= 2.
+            else:
+                unit = (unit + high_unit) / 2.
+            
+            if verbose:
+                log('Grid size {}, increase unit to {}'
+                    .format(len(grid), unit))
+
+        elif len(grid) < k / (1 + alpha):
+            # Too few grid cells, decrease unit.
+            high_unit = unit
+            if low_unit is None:
+                unit /= 2.
+            else:
+                unit = (unit + low_unit) / 2.
+                
+            if verbose:
+                log('Grid size {}, decrease unit to {}'
+                    .format(len(grid), unit))
+        else:
+            break
+
+        if high_unit is not None and low_unit is not None and \
+           high_unit - low_unit < 1e-20:
+            break
+        
+        if n_iter >= max_iter:
+            # Should rarely get here.
+            sys.stderr.write('WARNING: Max iterations reached, try increasing '
+                             ' alpha parameter.\n')
+            break
+        n_iter += 1
+
+    if verbose:
+        log('Found {} grid cells'.format(len(grid)))
+                
+    #clusters = sorted(set(labels))
+    #for cell in grid:
+    #    samples = grid[cell]
+    #    for cluster in clusters:
+    #        print('Cluster {} has {} samples'.format(
+    #            cluster, np.sum(labels[samples] == cluster))
+    #        )
+    #    print('')
+    
+    gs_idx = []
+    for n in range(N):
+        grid_cells = list(grid.keys())
+        grid_cell = grid_cells[np.random.choice(len(grid_cells))]
+        samples = list(grid[grid_cell])
+        sample = samples[np.random.choice(len(samples))]
+        if not replace:
+            grid[grid_cell].remove(sample)
+            if len(grid[grid_cell]) == 0:
+                del grid[grid_cell]
+        gs_idx.append(sample)
+
+    return sorted(gs_idx)
+
 def norm_entropy(grid, n_samples):
     k = len(grid)
     if k <= 1:
