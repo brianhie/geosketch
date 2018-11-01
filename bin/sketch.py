@@ -121,10 +121,10 @@ def gs(X, N, k='auto', seed=None, replace=False,
 
 def gs_exact(X, N, k='auto', seed=None, replace=False,
              tol=1e-3, n_iter=300, verbose=1):
-    ge_idx = np.random.choice(X.shape[0], size=N, replace=False)
+    ge_idx = gs(X, N, replace=replace)
     
     dist = pairwise_distances(X, n_jobs=-1)
-
+    
     cost = dist.max()
 
     iter_i = 0
@@ -133,17 +133,20 @@ def gs_exact(X, N, k='auto', seed=None, replace=False,
 
         if verbose:
             log('iter_i = {}'.format(iter_i))
-            log('cost = {}'.format(cost))
 
         labels = np.argmin(dist[ge_idx, :], axis=0)
 
-        ge_idx = []
+        ge_idx_new = []
         for cluster in range(N):
             cluster_idx = np.nonzero(labels == cluster)[0]
+            if len(cluster_idx) == 0:
+                ge_idx_new.append(ge_idx[cluster])
+                continue
             X_cluster = dist[cluster_idx, :]
             X_cluster = X_cluster[:, cluster_idx]
             within_idx = np.argmin(X_cluster.max(0))
-            ge_idx.append(cluster_idx[within_idx])
+            ge_idx_new.append(cluster_idx[within_idx])
+        ge_idx = ge_idx_new
 
         cost, prev_cost = dist[ge_idx, :].min(0).max(), cost
         assert(cost <= prev_cost)
@@ -154,7 +157,6 @@ def gs_exact(X, N, k='auto', seed=None, replace=False,
         iter_i += 1
 
     return ge_idx
-        
 
 def norm_entropy(grid, n_samples):
     k = len(grid)
@@ -443,25 +445,35 @@ def uniform(X, N, seed=None, replace=False):
         
     return list(np.random.choice(n_samples, size=N, replace=replace))
 
-def kmeans(X, N, seed=None, replace=False):
+def kmeans(X, N, seed=None, replace=False, init='random'):
     from sklearn.cluster import KMeans
 
-    km = KMeans(n_clusters=N, init='random', n_init=1,
-                random_state=seed)
+    km = KMeans(n_clusters=int(np.sqrt(X.shape[0])), init=init,
+                n_init=1, random_state=seed)
     km.fit(X)
 
-    index = AnnoyIndex(X.shape[1], metric='euclidean')
-    for i in range(X.shape[0]):
-        index.add_item(i, X[i, :])
-    index.build(10)
+    louv = {}
+    for i, cluster in enumerate(km.labels_):
+        if cluster not in louv:
+            louv[cluster] = []
+        louv[cluster].append(i)
+    
+    lv_idx = []
+    for n in range(N):
+        louv_cells = list(louv.keys())
+        louv_cell = louv_cells[np.random.choice(len(louv_cells))]
+        samples = list(louv[louv_cell])
+        sample = samples[np.random.choice(len(samples))]
+        if not replace:
+            louv[louv_cell].remove(sample)
+            if len(louv[louv_cell]) == 0:
+                del louv[louv_cell]
+        lv_idx.append(sample)
 
-    km_idx = []
-    for i in range(N):
-        centroid = km.cluster_centers_[i, :]
-        idx = index.get_nns_by_vector(centroid, 1)[0]
-        km_idx.append(idx)
+    return lv_idx
 
-    return km_idx
+def kmeansppp(X, N, seed=None, replace=False):
+    return kmeans(X, N, seed=seed, replace=replace, init='k-means++')
 
 def louvain1(X, N, seed=None, replace=False):
     return louvain(X, N, resolution=1, seed=seed, replace=replace)

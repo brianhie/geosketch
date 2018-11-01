@@ -468,7 +468,7 @@ def err_exit(param_name):
     sys.stderr.write('Needs `{}\' param.\n'.format(param_name))
     exit(1)
     
-def experiments(X_dimred, name, n_seeds=1, **kwargs):
+def experiments(X_dimred, name, n_seeds=10, **kwargs):
 
     columns = [
         'name', 'sampling_fn', 'replace', 'N', 'seed', 'time'
@@ -499,16 +499,18 @@ def experiments(X_dimred, name, n_seeds=1, **kwargs):
     of = open('target/experiments/{}.txt'.format(name), 'w')
     of.write('\t'.join(columns) + '\n')
     
-    Ns = [ 100, ]#500, 1000, 5000, 10000, 20000 ]
+    Ns = [ 100, 500, 1000, 5000, 10000, 20000 ]
 
     sampling_fns = [
         uniform,
         gs,
         srs,
-        kmeans,
-        kmeanspp,
         louvain1,
         louvain3,
+        kmeanspp,
+        kmeans,
+        kmeansppp,
+        gs_exact,
         #None,
     ]
     
@@ -516,14 +518,16 @@ def experiments(X_dimred, name, n_seeds=1, **kwargs):
         'uniform',
         'geometric_sketching',
         'srs',
-        'kmeans',
-        'kmeans++',
         'louvain1',
         'louvain3',
+        'kmeans++',
+        'kmeans',
+        'kmeans+++',
+        'gs_exact',
         #'dropClust',
     ]
 
-    not_replace = set([ 'kmeans', 'kmeans++', 'dropClust' ])
+    not_replace = set([ 'kmeans++', 'dropClust' ])
 
     assert(len(sampling_fns) == len(sampling_fn_names))
 
@@ -626,13 +630,16 @@ def experiment_stats(of, X_dimred, samp_idx, name, **kwargs):
             if c in clusters:
                 cluster_hist[c] = np.sum(cluster_labels == c)
         cluster_hist /= np.sum(cluster_hist)
-        stats.append(scipy.stats.entropy(cluster_hist, expected))
+        stats.append(scipy.stats.entropy(expected, cluster_hist))
 
     if 'max_min_dist' in kwargs and kwargs['max_min_dist']:
-        dist = pairwise_distances(X_dimred[samp_idx, :], n_jobs=-1)
-        stats.append(min(dist.max(1)))
+        dist = pairwise_distances(
+            X_dimred[samp_idx, :], X_dimred, n_jobs=-1
+        )
+        stats.append(dist.min(0).max())
 
     of.write('\t'.join([ str(stat) for stat in stats ]) + '\n')
+    of.flush()
     
 def seurat_cluster(name):
     rcode = Popen('Rscript R/seurat.R {0} > {0}.log 2>&1'
