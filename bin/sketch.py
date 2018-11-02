@@ -254,15 +254,12 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
 
     if verbose:
         log('Found {} grid cells'.format(len(grid)))
-                
-    #clusters = sorted(set(labels))
-    #for cell in grid:
-    #    samples = grid[cell]
-    #    for cluster in clusters:
-    #        print('Cluster {} has {} samples'.format(
-    #            cluster, np.sum(labels[samples] == cluster))
-    #        )
-    #    print('')
+
+    #for d in range(n_features):
+    #    bins = set()
+    #    for grid_cell in grid:
+    #        bins.add(grid_cell[d])
+    #    print('dimension {} has {} bins'.format(d, len(bins)))
     
     gs_idx = []
     for n in range(N):

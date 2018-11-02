@@ -87,12 +87,19 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(cell_labels)
     cell_labels = le.transform(cell_labels)
 
+    experiment_gs(X_dimred, NAMESPACE, cell_labels=cell_labels,
+                  gene_names=viz_genes, genes=genes,
+                  gene_expr=vstack(datasets),
+                  kmeans=False, visualize_orig=False)
+
+    experiment_uni(X_dimred, NAMESPACE, cell_labels=cell_labels,
+                   kmeans=False, visualize_orig=False)
+    
     experiments(
         X_dimred, NAMESPACE,
         rare=True, cell_labels=cell_labels,
         rare_label=le.transform(['Choroid_Plexus'])[0],
         entropy=True,
-        max_min_dist=True
     )
     
     exit()
@@ -100,12 +107,6 @@ if __name__ == '__main__':
     rare(X_dimred, NAMESPACE, cell_labels, le.transform(['Choroid_Plexus'])[0])
     
     balance(X_dimred, NAMESPACE, cell_labels)
-    
-    experiment_gs(X_dimred, NAMESPACE, cell_labels=cell_labels,
-                  kmeans=False, visualize_orig=False)
-
-    experiment_uni(X_dimred, NAMESPACE, cell_labels=cell_labels,
-                   kmeans=False, visualize_orig=False)
     
     name = 'data/{}'.format(NAMESPACE)
     if not os.path.isfile('{}/matrix.mtx'.format(name)):

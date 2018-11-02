@@ -223,8 +223,7 @@ def experiment(sampling_fn, X_dimred, name, cell_labels=None,
                kmeans=True, visualize_orig=True,
                downsample=True, n_downsample=100000,
                gene_names=None, gene_expr=None, genes=None,
-               perplexity=500, kmeans_k=10, sample_type='',
-               weights=None):
+               perplexity=500, kmeans_k=10, sample_type=''):
 
     # Assign cells to clusters.
 
@@ -284,7 +283,7 @@ def experiment(sampling_fn, X_dimred, name, cell_labels=None,
             continue
 
         log('Sampling {}...'.format(N))
-        samp_idx = sampling_fn(X_dimred, N, weights=weights)
+        samp_idx = sampling_fn(X_dimred, N)
         log('Found {} entries'.format(len(set(samp_idx))))
 
         log('Visualizing sampled...')
@@ -317,7 +316,7 @@ def normalized_entropy(counts):
     
     return H / np.log(k)
     
-def rare(X_dimred, name, cell_labels, rare_label, n_seeds=10, weights=None):
+def rare(X_dimred, name, cell_labels, rare_label, n_seeds=10):
     Ns = [ 100, 500, 1000, 5000, 10000, 20000 ]
 
     clusters = set(cell_labels)
@@ -390,7 +389,7 @@ def rare(X_dimred, name, cell_labels, rare_label, n_seeds=10, weights=None):
     
     plt.show()
 
-def balance(X_dimred, name, cell_labels, n_seeds=10, weights=None):
+def balance(X_dimred, name, cell_labels, n_seeds=10):
     Ns = [ 100, 500, 1000, 5000, 10000, 20000 ]
 
     clusters = set(cell_labels)
@@ -505,6 +504,7 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
         uniform,
         gs,
         gs_gap,
+        gs_gap,
         srs,
         louvain1,
         louvain3,
@@ -519,6 +519,7 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
         'uniform',
         'geometric_sketching',
         'gs_gap',
+        'gs_gap_N',
         'srs',
         'louvain1',
         'louvain3',
@@ -559,6 +560,13 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
                         samp_idx = dropclust_sample('data/' + name, N, seed=seed)
                         t1 = time()
                         log('Sampling dropClust done.')
+                    elif sampling_fn_names[s_idx] == 'gs_gap_N':
+                        log('Sampling gs_gap_N...')
+                        t0 = time()
+                        samp_idx = sampling_fn(X_dimred, N, k=N, seed=seed,
+                                               replace=replace)
+                        t1 = time()
+                        log('Sampling gs_gap_N done.')
                     else:
                         log('Sampling {}...'.format(sampling_fn_names[s_idx]))
                         t0 = time()
@@ -699,6 +707,71 @@ def experiment_seurat_ari(data_names, namespace):
         log('N = {}, Uniform ARI = {}'.format(
             N, adjusted_rand_score(cluster_labels_full, cluster_labels)
         ))
+
+def experiment_kmeans_ari(X, name, n_seeds=10):
+    
+    sampling_fns = [
+        uniform,
+        gs,
+        gs_gap,
+        srs,
+        louvain1,
+        louvain3,
+        kmeanspp,
+        kmeans,
+        kmeansppp,
+        gs_exact,
+        #None,
+    ]
+    
+    sampling_fn_names = [
+        'uniform',
+        'geometric_sketching',
+        'gs_gap',
+        'srs',
+        'louvain1',
+        'louvain3',
+        'kmeans++',
+        'kmeans',
+        'kmeans+++',
+        'gs_exact',
+        #'dropClust',
+    ]
+
+    of = open('target/experiments/kmeans_ari/{}.txt'.format(name), 'a')
+    of.write('sampling_fn\tN\tseed\tari\n')
+    
+    Ns = [ 1000, 5000, 10000, 25000 ]
+
+    for s_idx, sampling_fn in enumerate(sampling_fns):
+
+        for N in Ns:
+            
+            if N > X.shape[0]:
+                continue
+
+            for seed in range(n_seeds):
+                
+                km = KMeans(n_clusters=20, n_init=1, random_state=seed)
+                km.fit(X)
+                cluster_labels_full = km.labels_[:]
+
+                samp_idx = sampling_fn(X, N, seed=seed)
+    
+                km = KMeans(n_clusters=20, n_init=1, random_state=seed)
+                km.fit(X[samp_idx, :])
+        
+                cluster_labels = label_approx(X, X[samp_idx, :], km.labels_)
+    
+                stats = [
+                    sampling_fn_names[s_idx], N, seed,
+                    adjusted_rand_score(cluster_labels_full, cluster_labels)
+                ]
+                
+                of.write('\t'.join([ str(stat) for stat in stats ]) + '\n')
+                of.flush()
+
+    of.close()
 
 def experiment_find_rare(data_names, namespace):
     datasets, genes_list, n_cells = load_names(data_names, norm=False)
