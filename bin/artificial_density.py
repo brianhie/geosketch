@@ -37,6 +37,11 @@ if __name__ == '__main__':
     X_dimred = np.concatenate(Xs)
     cell_labels = np.array(labels, dtype=int)
 
+    #from sketch import gs_gap
+    #gs_idx = gs_gap(X_dimred, 1000, replace=True)
+    #report_cluster_counts(cell_labels[gs_idx])
+    #exit()
+
     experiments(
         X_dimred, NAMESPACE,
         rare=True, cell_labels=cell_labels, rare_label=2,

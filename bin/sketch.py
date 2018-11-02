@@ -8,7 +8,7 @@ import sys
 from kmeanspp import kmeanspp
 from utils import log
 
-def gs(X, N, k='auto', seed=None, replace=False,
+def gs(X, N, k='auto', seed=None, replace=False, weights=None,
        alpha=0.1, max_iter=200, verbose=0, labels=None):
     n_samples, n_features = X.shape
 
@@ -22,6 +22,9 @@ def gs(X, N, k='auto', seed=None, replace=False,
         return range(N)
     if k == 'auto':
         k = int(np.sqrt(n_samples))
+    if weights is None:
+        weights = np.ones(n_features)
+    weights /= sum(weights)
 
     X -= X.min(0)
     X /= X.max()
@@ -38,7 +41,7 @@ def gs(X, N, k='auto', seed=None, replace=False,
 
         grid = {}
 
-        unit_d = unit * n_features
+        unit_d = unit / weights #* n_features
 
         for sample_idx in range(n_samples):
             if verbose > 1:
@@ -180,6 +183,8 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
     
     unit = (low_unit + high_unit) / 4.
 
+    grid_argsort = np.argsort(X, axis=0)
+
     n_iter = 0
     while True:
 
@@ -190,14 +195,13 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
 
         unit_d = unit * n_features
 
-        grid_table = np.zeros((n_samples, n_features))
+        grid_table = np.empty((n_samples, n_features))
 
         for d in range(n_features):
             points_d = X[:, d]
-
             curr_start = None
             curr_interval = 0
-            for sample_idx in np.argsort(points_d):
+            for sample_idx in grid_argsort[:, d]:
                 if curr_start is None or \
                    curr_start + unit_d < points_d[sample_idx]:
                     curr_start = points_d[sample_idx]

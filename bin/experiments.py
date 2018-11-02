@@ -585,23 +585,6 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
 
     of.close()
 
-    #colors = [ '#377eb8', '#ff7f00', '#4daf4a', '#f781bf' ]
-    #        
-    #plt.figure()
-    #for s_idx in range(len(sampling_fns) * 2):
-    #    counts_means = sampling_counts_means[s_idx]
-    #    counts_sems = sampling_counts_sems[s_idx]
-    #    plt.plot(Ns[:len(counts_means)], counts_means, color=colors[s_idx / 2],
-    #             linestyle=('solid' if s_idx % 2 == 0 else 'dashed'))
-    #    plt.scatter(Ns[:len(counts_means)], counts_means, color=colors[s_idx / 2])
-    #    plt.fill_between(Ns[:len(counts_means)], counts_means - counts_sems,
-    #                     counts_means + counts_sems, alpha=0.3,
-    #                     color=colors[s_idx / 2])
-    #plt.title('Rare cell type counts')
-    #plt.savefig('{}_rare_counts.svg'.format(name))
-    #
-    #plt.show()
-
 def experiment_stats(of, X_dimred, samp_idx, name, **kwargs):
     stats = [
         name,
