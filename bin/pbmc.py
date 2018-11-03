@@ -55,9 +55,6 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(cell_labels)
     cell_labels = le.transform(cell_labels)
 
-    experiment_kmeans_ari(X_dimred, NAMESPACE)
-    exit()
-    
     experiments(
         X_dimred, NAMESPACE,
         rare=True, cell_labels=cell_labels,
@@ -66,6 +63,10 @@ if __name__ == '__main__':
         max_min_dist=True
     )
 
+    exit()
+    
+    experiment_kmeans_ari(X_dimred, NAMESPACE)
+    
     rare(X_dimred, NAMESPACE, cell_labels, le.transform(['cd14_monocytes'])[0])
     
     balance(X_dimred, NAMESPACE, cell_labels)

@@ -270,7 +270,8 @@ def experiment(sampling_fn, X_dimred, name, cell_labels=None,
             [ X_dimred[idx, :] ], cell_labels[idx],
             name + '_orig{}'.format(len(idx)), cell_types,
             gene_names=gene_names, gene_expr=expr, genes=genes,
-            perplexity=perplexity, n_iter=500, image_suffix='.png'
+            perplexity=perplexity, n_iter=500, image_suffix='.png',
+            viz_cluster=True
         )
         np.savetxt('data/embedding_{}.txt'.format(name), embedding)
 
@@ -498,13 +499,13 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
     of = open('target/experiments/{}.txt'.format(name), 'a')
     of.write('\t'.join(columns) + '\n')
     
-    Ns = [ 100, 500, 1000, 5000, 10000, 20000 ]
+    Ns = [ 100, 5000, 10000, 20000 ] #[ 100, 500, 1000, 5000, 10000, 20000 ]
 
     sampling_fns = [
         uniform,
         gs,
         gs_gap,
-        gs_gap,
+        #gs_gap,
         srs,
         louvain1,
         louvain3,
@@ -517,9 +518,9 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
     
     sampling_fn_names = [
         'uniform',
-        'geometric_sketching',
+        'gs_grid',
         'gs_gap',
-        'gs_gap_N',
+        #'gs_gap_N',
         'srs',
         'louvain1',
         'louvain3',
@@ -691,7 +692,7 @@ def experiment_seurat_ari(data_names, namespace):
             N, adjusted_rand_score(cluster_labels_full, cluster_labels)
         ))
 
-def experiment_kmeans_ari(X, name, n_seeds=10):
+def experiment_kmeans_ari(X, name, cell_labels, n_seeds=10):
     
     sampling_fns = [
         uniform,
@@ -709,7 +710,7 @@ def experiment_kmeans_ari(X, name, n_seeds=10):
     
     sampling_fn_names = [
         'uniform',
-        'geometric_sketching',
+        'gs_grid',
         'gs_gap',
         'srs',
         'louvain1',

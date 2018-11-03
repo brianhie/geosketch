@@ -51,12 +51,6 @@ if __name__ == '__main__':
     datasets, genes = merge_datasets(datasets, genes_list)
     X = vstack(datasets)
 
-    #log('Dimension reduction with {}...'.format(METHOD))
-    #X_dimred = reduce_dimensionality(
-    #    normalize(X, norm='l1'), method='svd', dimred=10
-    #)
-    #log('Dimensionality = {}'.format(X_dimred.shape[1]))
-    
     if not os.path.isfile('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE)):
         log('Dimension reduction with {}...'.format(METHOD))
         X_dimred = reduce_dimensionality(
@@ -82,23 +76,24 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(cell_labels)
     cell_labels = le.transform(cell_labels)
 
-    experiments(
-        X_dimred, NAMESPACE,
-        rare=True, cell_labels=cell_labels,
-        rare_label=le.transform(['Macrophage'])[0],
-    )
-    
-    exit()
-    
-    rare(X_dimred, NAMESPACE, cell_labels, le.transform(['Macrophage'])[0])
-    
     experiment_gs(X_dimred, NAMESPACE, cell_labels=cell_labels,
-                  gene_names=viz_genes, genes=genes,
-                  gene_expr=vstack(datasets),
+                  #gene_names=viz_genes, genes=genes,
+                  #gene_expr=vstack(datasets),
                   kmeans=False, visualize_orig=False)
 
     experiment_uni(X_dimred, NAMESPACE, cell_labels=cell_labels,
                    kmeans=False, visualize_orig=False)
+
+    exit()
+    
+    experiments(
+        X_dimred, NAMESPACE, n_seeds=1,
+        rare=True, cell_labels=cell_labels,
+        rare_label=le.transform(['Macrophage'])[0],
+    )
+    
+    rare(X_dimred, NAMESPACE, cell_labels, le.transform(['Macrophage'])[0])
+    
     
     balance(X_dimred, NAMESPACE, cell_labels)
     
