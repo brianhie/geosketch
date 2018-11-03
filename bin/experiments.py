@@ -60,6 +60,10 @@ def cluster_efficiency(cluster_labels, auto_labels):
 
     return cluster_to_efficiency
 
+def average_cluster_efficiency(cluster_labels, auto_labels):
+    c_to_e = cluster_efficiency(cluster_labels, auto_labels)
+    return np.mean([ c_to_e[c] for c in c_to_e ])
+
 def experiment_efficiency_kmeans(X_dimred, cluster_labels):
     log('k-means clustering efficiency experiment...')
     
@@ -270,8 +274,7 @@ def experiment(sampling_fn, X_dimred, name, cell_labels=None,
             [ X_dimred[idx, :] ], cell_labels[idx],
             name + '_orig{}'.format(len(idx)), cell_types,
             gene_names=gene_names, gene_expr=expr, genes=genes,
-            perplexity=perplexity, n_iter=500, image_suffix='.png',
-            viz_cluster=True
+            perplexity=perplexity, n_iter=500, image_suffix='.png'
         )
         np.savetxt('data/embedding_{}.txt'.format(name), embedding)
 
@@ -499,36 +502,29 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
     of = open('target/experiments/{}.txt'.format(name), 'a')
     of.write('\t'.join(columns) + '\n')
     
-    Ns = [ 100, 5000, 10000, 20000 ] #[ 100, 500, 1000, 5000, 10000, 20000 ]
+    Ns = [ 100, 500, 1000, 5000, 10000, 20000 ]
 
     sampling_fns = [
         uniform,
         gs,
         gs_gap,
-        #gs_gap,
         srs,
         louvain1,
         louvain3,
-        kmeanspp,
         kmeans,
         kmeansppp,
-        gs_exact,
-        #None,
+        kmeanspp,
     ]
     
     sampling_fn_names = [
         'uniform',
         'gs_grid',
         'gs_gap',
-        #'gs_gap_N',
         'srs',
         'louvain1',
         'louvain3',
-        'kmeans++',
-        'kmeans',
         'kmeans+++',
-        'gs_exact',
-        #'dropClust',
+        'kmeans++',
     ]
 
     not_replace = set([ 'kmeans++', 'dropClust' ])
@@ -692,7 +688,7 @@ def experiment_seurat_ari(data_names, namespace):
             N, adjusted_rand_score(cluster_labels_full, cluster_labels)
         ))
 
-def experiment_kmeans_ari(X, name, cell_labels, n_seeds=10):
+def experiment_kmeans_ce(X, name, cell_labels, n_seeds=1):
     
     sampling_fns = [
         uniform,
@@ -702,10 +698,7 @@ def experiment_kmeans_ari(X, name, cell_labels, n_seeds=10):
         louvain1,
         louvain3,
         kmeanspp,
-        kmeans,
         kmeansppp,
-        gs_exact,
-        #None,
     ]
     
     sampling_fn_names = [
@@ -716,40 +709,36 @@ def experiment_kmeans_ari(X, name, cell_labels, n_seeds=10):
         'louvain1',
         'louvain3',
         'kmeans++',
-        'kmeans',
         'kmeans+++',
-        'gs_exact',
-        #'dropClust',
     ]
 
-    of = open('target/experiments/kmeans_ari/{}.txt'.format(name), 'a')
-    of.write('sampling_fn\tN\tseed\tari\n')
+    of = open('target/experiments/kmeans_ce/{}.txt'.format(name), 'a')
+    of.write('sampling_fn\tN\tk\tseed\tclust_eff\n')
     
-    Ns = [ 1000, 5000, 10000, 25000 ]
+    N = int(X.shape[0] / 100)
+
+    ks = [ 5, 10, 20, 50, int(np.sqrt(X.shape[0])) ]
 
     for s_idx, sampling_fn in enumerate(sampling_fns):
 
-        for N in Ns:
+        for k in ks:
             
-            if N > X.shape[0]:
+            if k > N:
                 continue
 
             for seed in range(n_seeds):
                 
-                km = KMeans(n_clusters=20, n_init=1, random_state=seed)
-                km.fit(X)
-                cluster_labels_full = km.labels_[:]
-
                 samp_idx = sampling_fn(X, N, seed=seed)
     
                 km = KMeans(n_clusters=20, n_init=1, random_state=seed)
                 km.fit(X[samp_idx, :])
         
-                cluster_labels = label_approx(X, X[samp_idx, :], km.labels_)
+                avg_ce = average_cluster_efficiency(
+                    cell_labels[samp_idx], km.labels_
+                )
     
                 stats = [
-                    sampling_fn_names[s_idx], N, seed,
-                    adjusted_rand_score(cluster_labels_full, cluster_labels)
+                    sampling_fn_names[s_idx], N, k, seed, avg_ce
                 ]
                 
                 of.write('\t'.join([ str(stat) for stat in stats ]) + '\n')
@@ -757,6 +746,65 @@ def experiment_kmeans_ari(X, name, cell_labels, n_seeds=10):
 
     of.close()
 
+def experiment_louvain_ce(X, name, cell_labels, n_seeds=1):
+    from anndata import AnnData
+    import scanpy.api as sc
+    
+    sampling_fns = [
+        uniform,
+        gs,
+        gs_gap,
+        srs,
+        louvain1,
+        louvain3,
+        kmeanspp,
+        kmeansppp,
+    ]
+    
+    sampling_fn_names = [
+        'uniform',
+        'gs_grid',
+        'gs_gap',
+        'srs',
+        'louvain1',
+        'louvain3',
+        'kmeans++',
+        'kmeans+++',
+    ]
+
+    of = open('target/experiments/louvain_ce/{}.txt'.format(name), 'a')
+    of.write('sampling_fn\tN\tresolution\tseed\tclust_eff\n')
+    
+    N = int(X.shape[0] / 100)
+
+    resolutions = [ 0.1, 0.5, 1, 2, 3, 5 ]
+
+    for s_idx, sampling_fn in enumerate(sampling_fns):
+
+        for resolution in resolutions:
+            
+            for seed in range(n_seeds):
+                
+                samp_idx = sampling_fn(X, N, seed=seed)
+    
+                adata = AnnData(X=X[samp_idx, :])
+                sc.pp.neighbors(adata, use_rep='X')
+                sc.tl.louvain(adata, resolution=resolution, key_added='louvain')
+                louv_labels = adata.obs['louvain'].tolist()
+    
+                avg_ce = average_cluster_efficiency(
+                    cell_labels[samp_idx], louv_labels
+                )
+    
+                stats = [
+                    sampling_fn_names[s_idx], N, resolution, seed, avg_ce
+                ]
+                
+                of.write('\t'.join([ str(stat) for stat in stats ]) + '\n')
+                of.flush()
+
+    of.close()
+    
 def experiment_find_rare(data_names, namespace):
     datasets, genes_list, n_cells = load_names(data_names, norm=False)
     datasets, genes = merge_datasets(datasets, genes_list)

@@ -38,7 +38,9 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(cell_labels)
     cell_labels = le.transform(cell_labels)
 
-    experiment_kmeans_ari(X_dimred, NAMESPACE)
+    #experiment_kmeans_ce(X_dimred, NAMESPACE, cell_labels, n_seeds=10)
+    experiment_louvain_ce(X_dimred, NAMESPACE, cell_labels, n_seeds=10)
+
     exit()
     
     experiments(

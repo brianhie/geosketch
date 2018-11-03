@@ -33,6 +33,8 @@ if __name__ == '__main__':
         )
         Xs.append(X_dimred[rand_idx, :] + (translate * 2 * i))
         labels += list(np.zeros(len(rand_idx)) + i)
+
+        print(int(X.shape[0] / (10 ** i)))
         
     X_dimred = np.concatenate(Xs)
     cell_labels = np.array(labels, dtype=int)

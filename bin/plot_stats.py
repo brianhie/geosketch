@@ -1,6 +1,7 @@
 import numpy as np
 import sys
 from scanorama import plt
+plt.rcParams.update({'font.size': 20})
 import scipy.stats as ss
 
 from utils import mkdir_p
@@ -35,7 +36,7 @@ def parse_stats(fname):
     return samp_fns
 
 def plot_stats(stat, samp_fns=None, fname=None, dtype=float,
-               ignore_fns=None, only_replace=None):
+               only_fns=None, only_replace=None):
     if samp_fns is None:
         assert(fname is not None)
         samp_fns = parse_stats(fname)
@@ -61,7 +62,7 @@ def plot_stats(stat, samp_fns=None, fname=None, dtype=float,
 
         if samp_fn.startswith('_'):
             continue
-        if ignore_fns is not None and samp_fn in ignore_fns:
+        if only_fns is not None and samp_fn not in only_fns:
             continue
         if only_replace is not None and replace != only_replace:
             continue
@@ -97,11 +98,22 @@ def plot_stats(stat, samp_fns=None, fname=None, dtype=float,
         title += '_replace{}'.format(only_replace)
         
     plt.title(title)
-    plt.xlabel('N')
+    plt.xlabel('Sample size')
     plt.ylabel(stat)
     plt.legend()
     mkdir_p('target/stats_plots')
     plt.savefig('target/stats_plots/{}.svg'.format(title))
     
 if __name__ == '__main__':
-    plot_stats(sys.argv[1], fname=sys.argv[2], only_replace=len(sys.argv) > 3)
+    only_fns = set([
+        'uniform',
+        'gs_gap',
+        'srs',
+        'louvain1',
+        'louvain3',
+        'kmeans++',
+        'kmeans+++',
+    ])
+    
+    plot_stats(sys.argv[1], fname=sys.argv[2],
+               only_replace=len(sys.argv) > 3, only_fns=only_fns)
