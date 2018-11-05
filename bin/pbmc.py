@@ -55,18 +55,18 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(cell_labels)
     cell_labels = le.transform(cell_labels)
 
-    experiment_kmeans_ce(X_dimred, NAMESPACE, cell_labels)
-    experiment_louvain_ce(X_dimred, NAMESPACE, cell_labels)
-
-    exit()
-    
     experiments(
         X_dimred, NAMESPACE,
         rare=True, cell_labels=cell_labels,
         rare_label=le.transform(['cd14_monocytes'])[0],
         entropy=True,
-        max_min_dist=True
+        #max_min_dist=True
     )
+
+    exit()
+    
+    experiment_kmeans_ce(X_dimred, NAMESPACE, cell_labels, n_seeds=2)
+    experiment_louvain_ce(X_dimred, NAMESPACE, cell_labels, n_seeds=2)
 
     exit()
     

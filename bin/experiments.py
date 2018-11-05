@@ -64,145 +64,6 @@ def average_cluster_efficiency(cluster_labels, auto_labels):
     c_to_e = cluster_efficiency(cluster_labels, auto_labels)
     return np.mean([ c_to_e[c] for c in c_to_e ])
 
-def experiment_efficiency_kmeans(X_dimred, cluster_labels):
-    log('k-means clustering efficiency experiment...')
-    
-    cluster_labels = np.array(cluster_labels)
-    k_c_e = {}
-    kmeans_ks = [ 5, 10, 20, 30, 40, 50, 100 ]
-    
-    for kmeans_k in kmeans_ks:
-        log('k = {}'.format(kmeans_k))
-
-        km = KMeans(n_clusters=kmeans_k, n_jobs=40, verbose=0)
-        km.fit(X_dimred)
-
-        log('Calculating cluster efficiencies for k = {}'
-            .format(kmeans_k))
-
-        k_c_e[kmeans_k] = cluster_efficiency(
-            cluster_labels, km.labels_
-        )
-
-    for k in sorted(k_c_e.keys()):
-        print('k = {}'.format(k))
-        for c in sorted(k_c_e[k].keys()):
-            print('\tcluster = {}, efficiency = {}'
-                  .format(c, k_c_e[k][c]))
-
-    log('k-means clustering efficiency experiment done.')
-
-    return k_c_e
-
-def experiment_efficiency_louvain(X_dimred, cluster_labels):
-    from anndata import AnnData
-    import scanpy.api as sc
-
-    log('Louvain clustering efficiency experiment...')
-
-    cluster_labels = np.array(cluster_labels)
-
-    adata = AnnData(X=X_dimred)
-    sc.pp.neighbors(adata, use_rep='X')
-
-    r_c_e = {}
-    resolutions = [ 0.1, 0.5, 1, 1.5, 2, 5 ]
-
-    for resolution in resolutions:
-        log('resolution = {}'.format(resolution))
-
-        sc.tl.louvain(adata, resolution=resolution,
-                      key_added='louvain')
-        louvain_labels = np.array(adata.obs['louvain'].tolist())
-
-        log('Found {} clusters'.format(len(set(louvain_labels))))
-        log('Calculating cluster efficiencies for resolution = {}'
-            .format(resolution))
-
-        r_c_e[resolution] = cluster_efficiency(
-            cluster_labels, louvain_labels
-        )
-
-    for r in sorted(r_c_e.keys()):
-        print('resolution = {}'.format(r))
-        for c in sorted(r_c_e[r].keys()):
-            print('\tcluster = {}, efficiency = {}'
-                  .format(c, r_c_e[r][c]))
-
-    log('Louvain clustering efficiency experiment done.')
-
-    return r_c_e
-
-def dropclust_preprocess(X, name, seed=None):
-    if not os.path.isfile('data/{}/matrix.mtx'.format(name)):
-        save_mtx('data/' + name, csr_matrix(X),
-                 [ str(i) for i in range(X.shape[1]) ])
-    
-    os.chdir('../dropClust')
-
-    if seed is None:
-        rcode = Popen('Rscript dropClust_preprocess.R data/{} >> py.log'
-                      .format(name), shell=True).wait()
-    else:
-        rcode = Popen('Rscript dropClust_preprocess.R data/{} {} >> py.log'
-                      .format(name, seed), shell=True).wait()
-
-    if rcode != 0:
-        sys.stderr.write('ERROR: subprocess returned error code {}\n'
-                         .format(rcode))
-        exit(rcode)
-
-    os.chdir('../ample')
-
-def dropclust_sample(name, N, seed=None):
-    os.chdir('../dropClust')
-
-    if seed is None:
-        rcode = Popen('Rscript dropClust_sample.R {} {} >> py.log'
-                      .format(name, N), shell=True).wait()
-    else:
-        rcode = Popen('Rscript dropClust_sample.R {} {} {} >> py.log'
-                      .format(name, N, seed), shell=True).wait()
-
-    if rcode != 0:
-        sys.stderr.write('ERROR: subprocess returned error code {}\n'
-                         .format(rcode))
-        exit(rcode)
-
-    with open('{}_dropclust{}.txt'.format(name, N)) as f:
-        dropclust_idx = [
-            int(idx) for idx in
-            f.read().rstrip().split()
-        ]
-
-    os.chdir('../ample')
-
-    return dropclust_idx
-
-def experiment_dropclust(X_dimred, name, cell_labels):
-
-    log('dropClust preprocessing...')
-    dropclust_preprocess(X_dimred, name)
-    log('dropClust preprocessing done.')
-        
-    Ns = [ 1000, 5000, 10000, 20000, 50000 ]
-
-    cell_types = [ str(ct) for ct in sorted(set(cell_labels)) ]
-        
-    for N in Ns:
-        log('dropClust {}...'.format(N))
-        dropclust_idx = dropclust_sample(name, N)
-        log('Found {} entries'.format(len(set(dropclust_idx))))
-
-        log('Visualizing sampled...')
-
-        visualize([ X_dimred[dropclust_idx, :] ], cell_labels[dropclust_idx],
-                  name + '_dropclust{}'.format(N), cell_types,
-                  perplexity=max(N/200, 50), n_iter=500,
-                  size=max(int(30000/N), 1), image_suffix='.png')
-
-        report_cluster_counts(cell_labels[dropclust_idx])
-
 def report_cluster_counts(cluster_labels):
     clusters = sorted(set(cluster_labels))
 
@@ -211,6 +72,10 @@ def report_cluster_counts(cluster_labels):
         print('Cluster {} has {} cells'.
               format(cluster, n_cluster))
 
+def experiment_kmeanspp(X_dimred, name, **kwargs):
+    kwargs['sample_type'] = 'kmeanspp'
+    experiment(kmeanspp, X_dimred, name, **kwargs)
+    
 def experiment_srs(X_dimred, name, **kwargs):
     kwargs['sample_type'] = 'srs'
     experiment(srs, X_dimred, name, **kwargs)
@@ -319,153 +184,6 @@ def normalized_entropy(counts):
                for i in range(k) if counts[i] > 0 ])
     
     return H / np.log(k)
-    
-def rare(X_dimred, name, cell_labels, rare_label, n_seeds=10):
-    Ns = [ 100, 500, 1000, 5000, 10000, 20000 ]
-
-    clusters = set(cell_labels)
-    max_cluster = max(clusters)
-                
-    sampling_fns = [ gs, uniform, ]#dropclust ]
-    sampling_fn_names = [ 'GS', 'Uniform', ]#'dropClust' ]
-
-    sampling_counts_means = []
-    sampling_counts_sems = []
-    
-    for s_idx, sampling_fn in enumerate(sampling_fns):
-        
-        if sampling_fn_names[s_idx] == 'dropClust':
-            dropclust_preprocess(name)
-
-        for replace in [ True, False ]:
-            if sampling_fn_names[s_idx] == 'dropClust' and replace:
-                continue
-
-            counts_means, counts_sems = [], []
-
-            for N in Ns:
-                if N > X_dimred.shape[0]:
-                    continue
-                log('N = {}...'.format(N))
-            
-                counts = []
-                
-                for seed in range(n_seeds):
-            
-                    if sampling_fn_names[s_idx] == 'dropClust':
-                        log('Sampling dropClust...')
-                        samp_idx = dropclust_sample('data/' + name, N, seed=seed)
-                        log('Sampling dropClust done.')
-                    else:
-                        log('Sampling {}...'.format(sampling_fn_names[s_idx]))
-                        samp_idx = sampling_fn(X_dimred, N, seed=seed,
-                                               replace=replace)
-                        log('Sampling {} done.'.format(sampling_fn_names[s_idx]))
-                        
-                    cluster_labels = cell_labels[samp_idx]
-                    
-                    counts.append(sum(cluster_labels == rare_label))
-                    print(counts[-1])
-
-                counts_means.append(np.mean(counts))
-                counts_sems.append(scipy.stats.sem(counts))
-
-                log(np.mean(counts))
-                log(scipy.stats.sem(counts))
-
-            sampling_counts_means.append(np.array(counts_means))
-            sampling_counts_sems.append(np.array(counts_sems))
-
-    colors = [ '#377eb8', '#ff7f00', '#4daf4a', '#f781bf' ]
-            
-    plt.figure()
-    for s_idx in range(len(sampling_fns) * 2):
-        counts_means = sampling_counts_means[s_idx]
-        counts_sems = sampling_counts_sems[s_idx]
-        plt.plot(Ns[:len(counts_means)], counts_means, color=colors[s_idx / 2],
-                 linestyle=('solid' if s_idx % 2 == 0 else 'dashed'))
-        plt.scatter(Ns[:len(counts_means)], counts_means, color=colors[s_idx / 2])
-        plt.fill_between(Ns[:len(counts_means)], counts_means - counts_sems,
-                         counts_means + counts_sems, alpha=0.3,
-                         color=colors[s_idx / 2])
-    plt.title('Rare cell type counts')
-    plt.savefig('{}_rare_counts.svg'.format(name))
-    
-    plt.show()
-
-def balance(X_dimred, name, cell_labels, n_seeds=10):
-    Ns = [ 100, 500, 1000, 5000, 10000, 20000 ]
-
-    clusters = set(cell_labels)
-    max_cluster = max(clusters)
-                
-    sampling_fns = [ gs, uniform, ]#none ]
-    sampling_fn_names = [ 'GS', 'Uniform', ]#'dropClust' ]
-
-    sampling_entropies_means = []
-    sampling_entropies_sems = []
-    
-    for s_idx, sampling_fn in enumerate(sampling_fns):
-
-        if sampling_fn_names[s_idx] == 'dropClust':
-            dropclust_preprocess(X_dimred, name)
-        
-        for replace in [ True, False ]:
-            if sampling_fn_names[s_idx] == 'dropClust' and replace:
-                continue
-
-            entropies_means, entropies_sems = [], []
-
-            for N in Ns:
-                if N > X_dimred.shape[0]:
-                    continue
-                log('N = {}...'.format(N))
-            
-                entropies = []
-                
-                for seed in range(n_seeds):
-            
-                    if sampling_fn_names[s_idx] == 'dropClust':
-                        log('Sampling dropClust...')
-                        samp_idx = dropclust_sample('data/' + name, N, seed=seed)
-                        log('Sampling dropClust done.')
-                    else:
-                        log('Sampling {}...'.format(sampling_fn_names[s_idx]))
-                        samp_idx = sampling_fn(X_dimred, N, seed=seed,
-                                               replace=replace)
-                        log('Sampling {} done.'.format(sampling_fn_names[s_idx]))
-                        
-                    cluster_labels = cell_labels[samp_idx]
-                    
-                    cluster_hist = np.zeros(max_cluster + 1)
-                    for c in range(max_cluster + 1):
-                        if c in clusters:
-                            cluster_hist[c] = sum(cluster_labels == c)
-
-                    entropies.append(normalized_entropy(cluster_hist))
-
-                entropies_means.append(np.mean(entropies))
-                entropies_sems.append(scipy.stats.sem(entropies))
-
-            sampling_entropies_means.append(np.array(entropies_means))
-            sampling_entropies_sems.append(np.array(entropies_sems))
-
-    colors = [ '#377eb8', '#ff7f00', '#4daf4a', '#f781bf' ]
-            
-    plt.figure()
-    for s_idx in range(len(sampling_fns) * 2):
-        entropies_means = sampling_entropies_means[s_idx]
-        entropies_sems = sampling_entropies_sems[s_idx]
-        plt.plot(Ns[:len(entropies_means)], entropies_means, color=colors[s_idx / 2],
-                 linestyle=('solid' if s_idx % 2 == 0 else 'dashed'))
-        plt.scatter(Ns[:len(entropies_means)], entropies_means, color=colors[s_idx / 2])
-        plt.fill_between(Ns[:len(entropies_means)], entropies_means - entropies_sems,
-                         entropies_means + entropies_sems, alpha=0.3,
-                         color=colors[s_idx / 2])
-    plt.title('Entropies')
-    plt.savefig('{}_entropies.svg'.format(name))
-    
-    plt.show()
 
 def err_exit(param_name):
     sys.stderr.write('Needs `{}\' param.\n'.format(param_name))
@@ -523,6 +241,7 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
         'srs',
         'louvain1',
         'louvain3',
+        'kmeans',
         'kmeans+++',
         'kmeans++',
     ]
@@ -688,7 +407,7 @@ def experiment_seurat_ari(data_names, namespace):
             N, adjusted_rand_score(cluster_labels_full, cluster_labels)
         ))
 
-def experiment_kmeans_ce(X, name, cell_labels, n_seeds=1):
+def experiment_kmeans_ce(X, name, cell_labels, n_seeds=10, N=None):
     
     sampling_fns = [
         uniform,
@@ -713,9 +432,13 @@ def experiment_kmeans_ce(X, name, cell_labels, n_seeds=1):
     ]
 
     of = open('target/experiments/kmeans_ce/{}.txt'.format(name), 'a')
-    of.write('sampling_fn\tN\tk\tseed\tclust_eff\n')
-    
-    N = int(X.shape[0] / 100)
+
+    columns = [ 'name', 'sampling_fn', 'replace', 'N', 'k', 'seed',
+                'clust_eff' ]
+    of.write('\t'.join(columns) + '\n')
+
+    if N is None:
+        N = int(X.shape[0] / 100)
 
     ks = [ 5, 10, 20, 50, int(np.sqrt(X.shape[0])) ]
 
@@ -730,15 +453,17 @@ def experiment_kmeans_ce(X, name, cell_labels, n_seeds=1):
                 
                 samp_idx = sampling_fn(X, N, seed=seed)
     
-                km = KMeans(n_clusters=20, n_init=1, random_state=seed)
+                km = KMeans(n_clusters=k, n_init=1, random_state=seed)
                 km.fit(X[samp_idx, :])
-        
+
+                full_labels = label_approx(X, X[samp_idx, :], km.labels_)
+                
                 avg_ce = average_cluster_efficiency(
-                    cell_labels[samp_idx], km.labels_
+                    cell_labels, full_labels
                 )
     
                 stats = [
-                    sampling_fn_names[s_idx], N, k, seed, avg_ce
+                    name, sampling_fn_names[s_idx], False, N, k, seed, avg_ce
                 ]
                 
                 of.write('\t'.join([ str(stat) for stat in stats ]) + '\n')
@@ -746,7 +471,7 @@ def experiment_kmeans_ce(X, name, cell_labels, n_seeds=1):
 
     of.close()
 
-def experiment_louvain_ce(X, name, cell_labels, n_seeds=1):
+def experiment_louvain_ce(X, name, cell_labels, n_seeds=10, N=None):
     from anndata import AnnData
     import scanpy.api as sc
     
@@ -773,31 +498,38 @@ def experiment_louvain_ce(X, name, cell_labels, n_seeds=1):
     ]
 
     of = open('target/experiments/louvain_ce/{}.txt'.format(name), 'a')
-    of.write('sampling_fn\tN\tresolution\tseed\tclust_eff\n')
+
+    columns = [ 'name', 'sampling_fn', 'replace', 'N', 'resolution', 'seed',
+                'k', 'clust_eff' ]
+    of.write('\t'.join(columns) + '\n')
     
-    N = int(X.shape[0] / 100)
+    if N is None:
+        N = int(X.shape[0] / 100)
 
     resolutions = [ 0.1, 0.5, 1, 2, 3, 5 ]
 
     for s_idx, sampling_fn in enumerate(sampling_fns):
 
-        for resolution in resolutions:
-            
-            for seed in range(n_seeds):
+        for seed in range(n_seeds):
                 
-                samp_idx = sampling_fn(X, N, seed=seed)
+            samp_idx = sampling_fn(X, N, seed=seed)
     
+            for resolution in resolutions:
+            
                 adata = AnnData(X=X[samp_idx, :])
                 sc.pp.neighbors(adata, use_rep='X')
                 sc.tl.louvain(adata, resolution=resolution, key_added='louvain')
-                louv_labels = adata.obs['louvain'].tolist()
-    
+                louv_labels = np.array(adata.obs['louvain'].tolist())
+
+                full_labels = label_approx(X, X[samp_idx, :], louv_labels)
+                
                 avg_ce = average_cluster_efficiency(
-                    cell_labels[samp_idx], louv_labels
+                    cell_labels, full_labels
                 )
     
                 stats = [
-                    sampling_fn_names[s_idx], N, resolution, seed, avg_ce
+                    name, sampling_fn_names[s_idx], False, N, resolution, seed,
+                    max(louv_labels), avg_ce
                 ]
                 
                 of.write('\t'.join([ str(stat) for stat in stats ]) + '\n')

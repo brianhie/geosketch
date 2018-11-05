@@ -11,7 +11,7 @@ from utils import *
 
 np.random.seed(0)
 
-NAMESPACE = 'mouse_brain3'
+NAMESPACE = 'mouse_brain'
 METHOD = 'svd'
 DIMRED = 100
 
@@ -76,26 +76,33 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(cell_labels)
     cell_labels = le.transform(cell_labels)
 
+    experiment_srs(X_dimred, NAMESPACE, cell_labels=cell_labels,
+                   gene_names=viz_genes, genes=genes,
+                   gene_expr=vstack(datasets),
+                   kmeans=False, visualize_orig=False)
+    experiment_kmeanspp(X_dimred, NAMESPACE, cell_labels=cell_labels,
+                        gene_names=viz_genes, genes=genes,
+                        gene_expr=vstack(datasets),
+                        kmeans=False, visualize_orig=False)
+
+    exit()
+    
     experiments(
         X_dimred, NAMESPACE, n_seeds=1,
         rare=True, cell_labels=cell_labels,
         rare_label=le.transform(['Macrophage'])[0],
     )
     
-    exit()
-    
-    experiment_kmeans_ce(X_dimred, NAMESPACE, cell_labels)
-    experiment_louvain_ce(X_dimred, NAMESPACE, cell_labels)
+    experiment_kmeans_ce(X_dimred, NAMESPACE, cell_labels, n_seeds=1)
+    experiment_louvain_ce(X_dimred, NAMESPACE, cell_labels, n_seeds=1)
 
     experiment_gs(X_dimred, NAMESPACE, cell_labels=cell_labels,
                   #gene_names=viz_genes, genes=genes,
                   #gene_expr=vstack(datasets),
                   kmeans=False, visualize_orig=False)
-
+    
     experiment_uni(X_dimred, NAMESPACE, cell_labels=cell_labels,
                    kmeans=False, visualize_orig=False)
-
-    exit()
     
     rare(X_dimred, NAMESPACE, cell_labels, le.transform(['Macrophage'])[0])
     

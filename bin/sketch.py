@@ -389,6 +389,8 @@ def label_exact(X, sites, site_labels):
     return np.array(labels)
 
 def label_approx(X, sites, site_labels):
+    from annoy import AnnoyIndex
+    
     assert(X.shape[1] == sites.shape[1])
 
     # Build index over site points.

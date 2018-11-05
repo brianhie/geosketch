@@ -24,7 +24,7 @@ def parse_stats(fname):
             if (samp_fn, replace) not in samp_fns:
                 samp_fns[(samp_fn, replace)] = {}
     
-            N = int(fields[3])
+            N = float(fields[3])
             if N not in samp_fns[(samp_fn, replace)]:
                 samp_fns[(samp_fn, replace)][N] = []
     
@@ -36,7 +36,7 @@ def parse_stats(fname):
     return samp_fns
 
 def plot_stats(stat, samp_fns=None, fname=None, dtype=float,
-               only_fns=None, only_replace=None):
+               only_fns=None, only_replace=None, max_N=None):
     if samp_fns is None:
         assert(fname is not None)
         samp_fns = parse_stats(fname)
@@ -71,6 +71,8 @@ def plot_stats(stat, samp_fns=None, fname=None, dtype=float,
         means = []
         sems = []
         for N in samp_fns[(samp_fn, replace)]:
+            if max_N is not None and N > max_N:
+                continue
             Ns.append(N)
             stat_vals = [ dtype(stat_dict[stat])
                           for stat_dict in samp_fns[(samp_fn, replace)][N]
@@ -107,7 +109,7 @@ def plot_stats(stat, samp_fns=None, fname=None, dtype=float,
 if __name__ == '__main__':
     only_fns = set([
         'uniform',
-        'gs_gap',
+        'gs_grid',
         'srs',
         'louvain1',
         'louvain3',
