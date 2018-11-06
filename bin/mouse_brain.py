@@ -76,15 +76,15 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(cell_labels)
     cell_labels = le.transform(cell_labels)
 
-    experiment_srs(X_dimred, NAMESPACE, cell_labels=cell_labels,
-                   gene_names=viz_genes, genes=genes,
-                   gene_expr=vstack(datasets),
-                   kmeans=False, visualize_orig=False)
-    experiment_kmeanspp(X_dimred, NAMESPACE, cell_labels=cell_labels,
-                        gene_names=viz_genes, genes=genes,
-                        gene_expr=vstack(datasets),
-                        kmeans=False, visualize_orig=False)
 
+    from sketch import gs
+    samp_idx = gs(X_dimred, 1000, replace=False)
+    save_sketch(X, samp_idx, genes, NAMESPACE + '1000')
+    
+    for scale in [ 10, 25, 100 ]:
+        N = int(X.shape[0] / scale)
+        samp_idx = gs(X_dimred, N, replace=False)
+        save_sketch(X, samp_idx, genes, NAMESPACE + str(N))
     exit()
     
     experiments(
@@ -92,32 +92,27 @@ if __name__ == '__main__':
         rare=True, cell_labels=cell_labels,
         rare_label=le.transform(['Macrophage'])[0],
     )
-    
-    experiment_kmeans_ce(X_dimred, NAMESPACE, cell_labels, n_seeds=1)
-    experiment_louvain_ce(X_dimred, NAMESPACE, cell_labels, n_seeds=1)
-
-    experiment_gs(X_dimred, NAMESPACE, cell_labels=cell_labels,
-                  #gene_names=viz_genes, genes=genes,
-                  #gene_expr=vstack(datasets),
-                  kmeans=False, visualize_orig=False)
-    
-    experiment_uni(X_dimred, NAMESPACE, cell_labels=cell_labels,
-                   kmeans=False, visualize_orig=False)
-    
-    rare(X_dimred, NAMESPACE, cell_labels, le.transform(['Macrophage'])[0])
-    
-    
-    balance(X_dimred, NAMESPACE, cell_labels)
-    
-    name = 'data/{}'.format(NAMESPACE)
-    if not os.path.isfile('{}/matrix.mtx'.format(name)):
-        from save_mtx import save_mtx
-        save_mtx(name, csr_matrix(X), [ str(i) for i in range(X.shape[1]) ])
-    
-    experiment_dropclust(X_dimred, name, cell_labels)
-
-    experiment_efficiency_kmeans(X_dimred, cell_labels)
-
-    experiment_efficiency_louvain(X_dimred, cell_labels)
-    
-    log('Done.')
+    experiment_gs(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        gene_names=viz_genes, genes=genes,
+        gene_expr=vstack(datasets),
+        kmeans=False, visualize_orig=False
+    )
+    experiment_uni(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        gene_names=viz_genes, genes=genes,
+        gene_expr=vstack(datasets),
+        kmeans=False, visualize_orig=False
+    )
+    experiment_srs(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        gene_names=viz_genes, genes=genes,
+        gene_expr=vstack(datasets),
+        kmeans=False, visualize_orig=False
+    )
+    experiment_kmeanspp(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        gene_names=viz_genes, genes=genes,
+        gene_expr=vstack(datasets),
+        kmeans=False, visualize_orig=False
+    )

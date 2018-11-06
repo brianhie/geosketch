@@ -3,7 +3,9 @@
 *.png
 *.pyc
 *.svg
+*.txt
 *~
+R*
 data*
 plots*
 target*
