@@ -5,7 +5,7 @@
 *.svg
 *.txt
 *~
-R*
+R/*
 data*
 plots*
 target*
