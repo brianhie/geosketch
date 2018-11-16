@@ -3,6 +3,7 @@ import os
 from scanorama import *
 from scipy.sparse import vstack
 from sklearn.cluster import KMeans
+from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import normalize, LabelEncoder
 
 from experiments import *
@@ -44,7 +45,7 @@ def keep_valid(datasets):
               .format(data_names[i], len(valid_idx)))
         n_valid += len(valid_idx)
     print('Found {} valid cells among all datasets'.format(n_valid))
-
+    
 if __name__ == '__main__':
     datasets, genes_list, n_cells = load_names(data_names, norm=False)
     keep_valid(datasets)
@@ -76,17 +77,6 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(cell_labels)
     cell_labels = le.transform(cell_labels)
 
-
-    from sketch import gs
-    samp_idx = gs(X_dimred, 1000, replace=False)
-    save_sketch(X, samp_idx, genes, NAMESPACE + '1000')
-    
-    for scale in [ 10, 25, 100 ]:
-        N = int(X.shape[0] / scale)
-        samp_idx = gs(X_dimred, N, replace=False)
-        save_sketch(X, samp_idx, genes, NAMESPACE + str(N))
-    exit()
-    
     experiments(
         X_dimred, NAMESPACE, n_seeds=1,
         rare=True, cell_labels=cell_labels,
@@ -116,3 +106,14 @@ if __name__ == '__main__':
         gene_expr=vstack(datasets),
         kmeans=False, visualize_orig=False
     )
+
+    from sketch import gs
+    samp_idx = gs(X_dimred, 1000, replace=False)
+    save_sketch(X, samp_idx, genes, NAMESPACE + '1000')
+    
+    for scale in [ 10, 25, 100 ]:
+        N = int(X.shape[0] / scale)
+        samp_idx = gs(X_dimred, N, replace=False)
+        save_sketch(X, samp_idx, genes, NAMESPACE + str(N))
+    
+    

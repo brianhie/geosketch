@@ -30,6 +30,26 @@ if __name__ == '__main__':
     else:
         X_dimred = np.loadtxt('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE))
 
+    viz_genes = [
+        'GJA1', 'MBP',
+        'PLP1', 'MAL', 'PTGDS', 'MAG', 'CLDN11', 'APOD', 'FTH1',
+        'ERMN', 'MBP', 'ENPP2', 'QDPR', 'MOBP', 'TRF',
+        'CST3', 'SPARCL1', 'PTN', 'CD81', 'APOE', 'ATP1A2', 'ITM2B'
+    ]
+    
+    from sketch import gs
+    samp_idx = gs(X_dimred, 20000, replace=False)
+    
+    X_samp = np.log1p(normalize(X[samp_idx, :]))
+
+    embedding = visualize(
+        [ X_dimred[samp_idx, :] ], np.ones(len(samp_idx)),
+        NAMESPACE + '_astro{}'.format(len(samp_idx)), [ '1' ],
+        gene_names=viz_genes, gene_expr=X_samp, genes=genes,
+        perplexity=100, n_iter=500, image_suffix='.png'
+    )
+    exit()
+    
     from sketch import gs
     samp_idx = gs(X_dimred, 1000, replace=False)
     save_sketch(X, samp_idx, genes, NAMESPACE + '1000')
@@ -38,3 +58,5 @@ if __name__ == '__main__':
         N = int(X.shape[0] * scale)
         samp_idx = gs(X_dimred, N, replace=False)
         save_sketch(X, samp_idx, genes, NAMESPACE + str(N))
+
+    
