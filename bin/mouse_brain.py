@@ -78,10 +78,11 @@ if __name__ == '__main__':
     cell_labels = le.transform(cell_labels)
 
     experiments(
-        X_dimred, NAMESPACE, n_seeds=1,
+        X_dimred, NAMESPACE, n_seeds=10,
         rare=True, cell_labels=cell_labels,
-        rare_label=le.transform(['Macrophage'])[0],
+        rare_label=le.transform(['Endothelial_Tip'])[0],
     )
+    exit()
     experiment_gs(
         X_dimred, NAMESPACE, cell_labels=cell_labels,
         gene_names=viz_genes, genes=genes,

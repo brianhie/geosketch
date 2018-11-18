@@ -37,14 +37,14 @@ if __name__ == '__main__':
         'CST3', 'SPARCL1', 'PTN', 'CD81', 'APOE', 'ATP1A2', 'ITM2B'
     ]
     
-    from sketch import gs
-    samp_idx = gs(X_dimred, 20000, replace=False)
+    from sketch import gs_gap
+    samp_idx = gs_gap(X_dimred, 20000, replace=False)
     
-    X_samp = np.log1p(normalize(X[samp_idx, :]))
+    X_samp = normalize(X[samp_idx, :])
 
     embedding = visualize(
-        [ X_dimred[samp_idx, :] ], np.ones(len(samp_idx)),
-        NAMESPACE + '_astro{}'.format(len(samp_idx)), [ '1' ],
+        [ X_dimred[samp_idx, :] ], np.zeros(len(samp_idx), dtype=int),
+        NAMESPACE + '_astro{}'.format(len(samp_idx)), [ '0' ],
         gene_names=viz_genes, gene_expr=X_samp, genes=genes,
         perplexity=100, n_iter=500, image_suffix='.png'
     )
