@@ -5,7 +5,7 @@ setup(
     version='0.1',
     description='Geometry-preserving random sampling',
     url='https://github.com/brianhie/ample',
-    #download_url='https://github.com/brianhie/ample/archive/v0.1.tar.gz',
+    download_url='https://github.com/brianhie/ample/archive/v0.1-alpha.tar.gz',
     packages=find_packages(exclude=['bin', 'conf', 'data', 'target', 'R']),
     install_requires=[
         'fbpca>=1.0',
