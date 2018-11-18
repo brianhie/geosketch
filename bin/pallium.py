@@ -37,7 +37,7 @@ if __name__ == '__main__':
         'CST3', 'SPARCL1', 'PTN', 'CD81', 'APOE', 'ATP1A2', 'ITM2B'
     ]
     
-    from sketch import gs_gap
+    from ample import gs_gap
     samp_idx = gs_gap(X_dimred, 20000, replace=False)
     
     X_samp = normalize(X[samp_idx, :])
@@ -50,7 +50,7 @@ if __name__ == '__main__':
     )
     exit()
     
-    from sketch import gs
+    from ample import gs
     samp_idx = gs(X_dimred, 1000, replace=False)
     save_sketch(X, samp_idx, genes, NAMESPACE + '1000')
     

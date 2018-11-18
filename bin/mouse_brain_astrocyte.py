@@ -56,7 +56,7 @@ if __name__ == '__main__':
     else:
         X_dimred = np.loadtxt('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE))
         
-    from sketch import gs
+    from ample import gs
     samp_idx = gs(X_dimred, 20000, replace=False)
     
     #from anndata import AnnData

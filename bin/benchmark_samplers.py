@@ -5,7 +5,7 @@ from time import time
 
 from experiments import dropclust_preprocess, dropclust_sample
 from save_mtx import save_mtx
-from sketch import *
+from ample import *
 from utils import log
 
 if __name__ == '__main__':

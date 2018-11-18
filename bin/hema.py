@@ -78,7 +78,7 @@ if __name__ == '__main__':
         for idx in range(X.shape[0]):
             of.write('hematopoeisis{}\t{}'.format(idx, cell_names[idx]))
             
-    from sketch import *
+    from ample import *
 
     gs_idx = louvain1(X_dimred, 300, replace=True)
     write_table(X[gs_idx, :].toarray(), genes, 'data/pseudotime/' + NAMESPACE + '_gs')

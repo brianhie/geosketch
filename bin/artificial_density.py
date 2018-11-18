@@ -39,6 +39,11 @@ if __name__ == '__main__':
     X_dimred = np.concatenate(Xs)
     cell_labels = np.array(labels, dtype=int)
 
+    from ample import gs, gs_gap
+    samp_idx = gs_gap(X_dimred, 3000, replace=True, verbose=10)
+    report_cluster_counts(cell_labels[samp_idx])
+    exit()
+    
     experiments(
         X_dimred, NAMESPACE,
         rare=True, cell_labels=cell_labels, rare_label=2,

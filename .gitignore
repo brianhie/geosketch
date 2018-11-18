@@ -6,7 +6,10 @@
 *.txt
 *~
 R/*
+ample.egg-info/
+build/
 data*
+dist/
 plots*
 target*
 temp*

@@ -90,7 +90,7 @@ if __name__ == '__main__':
         for idx in range(X.shape[0]):
             of.write('mono_macro{}\t{}'.format(idx, cell_names[idx]))
             
-    from sketch import gs, gs_gap, uniform
+    from ample import gs, gs_gap, uniform
 
     gs_idx = gs(X_dimred, 110, replace=False)
     write_table(X[gs_idx, :].toarray(), genes, 'data/pseudotime/' + NAMESPACE + '_gs')

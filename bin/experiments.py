@@ -13,7 +13,7 @@ from time import time
 
 from process import load_names
 from save_mtx import save_mtx
-from sketch import *
+from ample import *
 from utils import *
 
 # Clustering-based downsampling efficiency.
@@ -224,7 +224,7 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
 
     sampling_fns = [
         uniform,
-        gs,
+        gs_grid,
         gs_gap,
         srs,
         louvain1,
