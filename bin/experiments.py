@@ -223,11 +223,11 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
     Ns = [ 100, 500, 1000, 5000, 10000, 20000 ]
 
     sampling_fns = [
-        uniform,
-        gs_grid,
-        gs_gap,
-        srs,
-        louvain1,
+        #uniform,
+        #gs_grid,
+        #gs_gap,
+        #srs,
+        #louvain1,
         louvain3,
         kmeans,
         kmeansppp,
@@ -235,18 +235,18 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
     ]
     
     sampling_fn_names = [
-        'uniform',
-        'gs_grid',
-        'gs_gap',
-        'srs',
-        'louvain1',
+        #'uniform',
+        #'gs_grid',
+        #'gs_gap',
+        #'srs',
+        #'louvain1',
         'louvain3',
         'kmeans',
         'kmeans+++',
         'kmeans++',
     ]
 
-    not_replace = set([ 'kmeans++', 'dropClust' ])
+    not_replace = set([ 'louvain3', 'kmeans++', 'dropClust' ])
 
     assert(len(sampling_fns) == len(sampling_fn_names))
 

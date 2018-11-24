@@ -75,6 +75,7 @@ if __name__ == '__main__':
         .read().rstrip().split('\n')
     )
     le = LabelEncoder().fit(cell_labels)
+    cell_names = sorted(set(cell_labels))
     cell_labels = le.transform(cell_labels)
 
     experiments(

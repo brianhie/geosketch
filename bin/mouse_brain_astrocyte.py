@@ -2,6 +2,7 @@ import numpy as np
 import os
 from scanorama import *
 from scipy.sparse import vstack
+import seaborn as sns
 from sklearn.cluster import KMeans
 from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import normalize, LabelEncoder
@@ -16,7 +17,6 @@ np.random.seed(0)
 NAMESPACE = 'mouse_brain'
 METHOD = 'svd'
 DIMRED = 100
-
 
 def auroc(X, genes, labels, focus, background=None):
     assert(len(genes) == X.shape[1])
@@ -40,6 +40,38 @@ def auroc(X, genes, labels, focus, background=None):
 
         print('{}\t{}'.format(gene, auroc))
 
+def astro_oligo_violin(X, genes, gene, labels, name):
+    X = X.toarray()
+
+    gidx = list(genes).index(gene)
+
+    astro = X[labels == 'astro', gidx]
+    oligo = X[labels == 'oligo', gidx]
+    both = X[labels == 'both', gidx]
+
+    plt.figure()
+    sns.violinplot(data=[ astro, oligo, both ], scale='width', cut=0)
+    sns.stripplot(data=[ astro, oligo, both ], jitter=True, color='black', size=1)
+    plt.xticks([0, 1, 2], ['Astrocytes', 'Oligodendrocytes', 'Both'])
+    plt.savefig('{}_violin_{}.svg'.format(name, gene))
+        
+def astro_oligo_joint(X, genes, gene1, gene2, labels, focus, name):
+    X = X.toarray()
+
+    gidx1 = list(genes).index(gene1)
+    gidx2 = list(genes).index(gene2)
+
+    idx = labels == focus
+
+    x1 = X[(idx, gidx1)]
+    x2 = X[(idx, gidx2)]
+
+    plt.figure()
+    sns.jointplot(
+        x1, x2, kind='scatter', space=0, alpha=0.3
+    ).plot_joint(sns.kdeplot, zorder=0, n_levels=10)
+    plt.savefig('{}_joint_{}_{}_{}.png'.format(name, focus, gene1, gene2))
+    
 if __name__ == '__main__':
     datasets, genes_list, n_cells = load_names(data_names, norm=False)
     keep_valid(datasets)
@@ -56,8 +88,9 @@ if __name__ == '__main__':
     else:
         X_dimred = np.loadtxt('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE))
         
-    from ample import gs
+    from ample import gs, uniform
     samp_idx = gs(X_dimred, 20000, replace=False)
+    #samp_idx = uniform(X_dimred, 20000, replace=False)
     
     #from anndata import AnnData
     #import scanpy.api as sc
@@ -78,34 +111,66 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(cell_labels)
     cell_labels = le.transform(cell_labels)
 
-    astro = set([ 0, 3, 7, 31 ])
-    oligo = set([ 2, 5, 22, 26, 27 ])
-    focus = set([ 32 ])
+    astro = set([ 1, 4, 5, 7 ])
+    oligo = set([ 8, 21, 23, 26, 27 ])
+    focus = set([ 2 ])
 
     labels = []
+    aob_labels = []
     for cl in cell_labels:
         if cl in focus:
             labels.append(0)
+            aob_labels.append('both')
         elif cl in astro or cl in oligo:
             labels.append(1)
+            if cl in astro:
+                aob_labels.append('astro')
+            else:
+                aob_labels.append('oligo')
         else:
             labels.append(2)
+            aob_labels.append('none')
     labels = np.array(labels)
+    aob_labels = np.array(aob_labels)
 
     X = np.log1p(normalize(X[samp_idx, :]))
-    auroc(X.toarray(), genes, labels, 0, background=1)
     
+    #auroc(X.toarray(), genes, labels, 0, background=1)
+    #astro_oligo_joint(X, genes, 'GJA1', 'MBP', aob_labels, 'astro', NAMESPACE)
+    #astro_oligo_joint(X, genes, 'GJA1', 'MBP', aob_labels, 'oligo', NAMESPACE)
+    #astro_oligo_joint(X, genes, 'GJA1', 'MBP', aob_labels, 'both', NAMESPACE)
+    #astro_oligo_joint(X, genes, 'GJA1', 'PLP1', aob_labels, 'astro', NAMESPACE)
+    #astro_oligo_joint(X, genes, 'GJA1', 'PLP1', aob_labels, 'oligo', NAMESPACE)
+    #astro_oligo_joint(X, genes, 'GJA1', 'PLP1', aob_labels, 'both', NAMESPACE)
+    
+    astro_oligo_violin(X, genes, 'GJA1', aob_labels, NAMESPACE)
+    astro_oligo_violin(X, genes, 'MBP', aob_labels, NAMESPACE)
+    astro_oligo_violin(X, genes, 'PLP1', aob_labels, NAMESPACE)
+
     viz_genes = [
-        'PLP1', 'MAL', 'PTGDS', 'MAG', 'CLDN11', 'APOD', 'FTH1',
-        'ERMN', 'MBP', 'ENPP2', 'QDPR', 'MOBP', 'TRF',
+        'SLC1A3', #'GJA1', 'MBP', 'PLP1', 'TRF',
+        #'CST3', 'CPE', 'FTH1', 'APOE', 'MT1', 'NDRG2', 'TSPAN7',
+        #'PLP1', 'MAL', 'PTGDS', 'CLDN11', 'APOD', 'QDPR', 'MAG', 'ERMN',
+        #'PLP1', 'MAL', 'PTGDS', 'MAG', 'CLDN11', 'APOD', 'FTH1',
+        #'ERMN', 'MBP', 'ENPP2', 'QDPR', 'MOBP', 'TRF',
         #'CST3', 'SPARCL1', 'PTN', 'CD81', 'APOE', 'ATP1A2', 'ITM2B'
     ]
     
+    cell_labels = (
+        open('data/cell_labels/mouse_brain_cluster.txt')
+        .read().rstrip().split('\n')
+    )
+    le = LabelEncoder().fit(cell_labels)
+    cell_labels = le.transform(cell_labels)
+    
     embedding = visualize(
-        [ X_dimred[samp_idx, :] ], labels,
+        [ X_dimred[samp_idx, :] ], cell_labels[samp_idx],
         NAMESPACE + '_astro{}'.format(len(samp_idx)),
-        [ str(ct) for ct in sorted(set(labels)) ],
+        [ str(ct) for ct in sorted(set(cell_labels)) ],
         gene_names=viz_genes, gene_expr=X, genes=genes,
         perplexity=100, n_iter=500, image_suffix='.png',
         viz_cluster=True
     )
+
+    #visualize_dropout(X, embedding, image_suffix='.png',
+    #                  viz_prefix=NAMESPACE + '_dropout')
