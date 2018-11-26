@@ -110,6 +110,7 @@ if __name__ == '__main__':
     only_fns = set([
         'uniform',
         'gs_grid',
+        'gs_gap',
         'srs',
         'louvain1',
         'louvain3',

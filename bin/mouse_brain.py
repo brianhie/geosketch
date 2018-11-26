@@ -70,20 +70,24 @@ if __name__ == '__main__':
         'Synpr', 'Cacng4', 'Ttr', 'Gpr37', 'C1ql3', 'Fezf2',
     ]
 
-    cell_labels = (
+    labels = (
         open('data/cell_labels/mouse_brain_cluster.txt')
         .read().rstrip().split('\n')
     )
-    le = LabelEncoder().fit(cell_labels)
-    cell_names = sorted(set(cell_labels))
-    cell_labels = le.transform(cell_labels)
+    le = LabelEncoder().fit(labels)
+    cell_names = sorted(set(labels))
+    cell_labels = le.transform(labels)
 
     experiments(
-        X_dimred, NAMESPACE, n_seeds=10,
-        rare=True, cell_labels=cell_labels,
+        X_dimred, NAMESPACE, n_seeds=2,
+        cell_labels=cell_labels,
+        kmeans_ami=True, louvain_ami=True,
+        rare=True,
         rare_label=le.transform(['Endothelial_Tip'])[0],
     )
     exit()
+    from differential_entropies import differential_entropies
+    differential_entropies(X_dimred, labels)
     experiment_gs(
         X_dimred, NAMESPACE, cell_labels=cell_labels,
         gene_names=viz_genes, genes=genes,

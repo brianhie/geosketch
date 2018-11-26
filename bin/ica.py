@@ -82,8 +82,6 @@ if __name__ == '__main__':
 
     harmony_dimred = np.loadtxt('data/harmony_ica.txt')
     
-    entropy_test(harmony_dimred[idx], labels[idx])
-    
     embedding = visualize(
         [ harmony_dimred[idx] ], labels[idx],
         NAMESPACE + '_harmony',
@@ -92,41 +90,30 @@ if __name__ == '__main__':
         viz_cluster=True
     )
     
-    exit()
-
-    gmax = 2000
-    knn = 30
-    n_iter = 100
-    
-    log('GEOSKETCH_MAX = {}'.format(gmax))
-    log('KNN = {}'.format(knn))
-    log('N_ITER = {}'.format(n_iter))
+    entropy_test(embedding, labels[idx])
     
     log('Scanorama integration geosketch')
     datasets_dimred, genes = integrate(
         datasets, genes_list, batch_size=1000, geosketch=True, dimred=20,
-        geosketch_max=gmax, knn=knn, n_iter=n_iter,
+        geosketch_max=2000, knn=30, n_iter=20,
     )
     log('Done')
 
-    X_dimred = np.concatenate(datasets_dimred)
-
-    entropy_test(X_dimred[idx], labels[idx])
-
-    exit()
-
     embedding = visualize(
-        [ X_dimred[idx] ], labels[idx],
+        [ np.concatenate(datasets_dimred)[idx] ], labels[idx],
         NAMESPACE + '_geosketch',
         [ str(ct) for ct in sorted(set(labels)) ],
         perplexity=100, n_iter=500, image_suffix='.png',
         viz_cluster=True
     )
 
+    entropy_test(embedding, labels[idx])
+
     datasets, genes_list, n_cells = load_names(data_names)
     log('Scanorama integration normal')
     datasets_dimred, genes = integrate(
-        datasets, genes_list, batch_size=1000, knn=30, dimred=20,
+        datasets, genes_list, batch_size=1000, dimred=20,
+        knn=40
     )
     log('Done')
     
@@ -146,7 +133,7 @@ if __name__ == '__main__':
     
     embedding = visualize(
         [ np.concatenate(datasets_dimred)[idx] ], labels[idx],
-        NAMESPACE + '_ds',
+        NAMESPACE + '_uncorrected',
         [ str(ct) for ct in sorted(set(labels)) ],
         perplexity=100, n_iter=500, image_suffix='.png',
         viz_cluster=True

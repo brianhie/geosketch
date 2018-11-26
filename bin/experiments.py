@@ -1,6 +1,8 @@
+from anndata import AnnData
 import numpy as np
 import os
 from scanorama import *
+import scanpy.api as sc
 import scipy.stats
 from scipy.sparse import vstack
 from sklearn.cluster import KMeans
@@ -13,6 +15,7 @@ from time import time
 
 from process import load_names
 from save_mtx import save_mtx
+from supervised import adjusted_mutual_info_score
 from ample import *
 from utils import *
 
@@ -217,17 +220,29 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
     if 'max_min_dist' in kwargs and kwargs['max_min_dist']:
         columns.append('max_min_dist')
         
-    of = open('target/experiments/{}.txt'.format(name), 'a')
+    if 'kmeans_ami' in kwargs and kwargs['kmeans_ami']:
+        if not 'cell_labels' in kwargs:
+            err_exit('cell_labels')
+        columns.append('kmeans_ami')
+        columns.append('kmeans_bami')
+        
+    if 'louvain_ami' in kwargs and kwargs['louvain_ami']:
+        if not 'cell_labels' in kwargs:
+            err_exit('cell_labels')
+        columns.append('louvain_ami')
+        columns.append('louvain_bami')
+        
+    of = open('target/experiments/{}.txt.1'.format(name), 'a')
     of.write('\t'.join(columns) + '\n')
     
     Ns = [ 100, 500, 1000, 5000, 10000, 20000 ]
 
     sampling_fns = [
-        #uniform,
-        #gs_grid,
-        #gs_gap,
-        #srs,
-        #louvain1,
+        uniform,
+        gs_grid,
+        gs_gap,
+        srs,
+        louvain1,
         louvain3,
         kmeans,
         kmeansppp,
@@ -235,18 +250,18 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
     ]
     
     sampling_fn_names = [
-        #'uniform',
-        #'gs_grid',
-        #'gs_gap',
-        #'srs',
-        #'louvain1',
+        'uniform',
+        'gs_grid',
+        'gs_gap',
+        'srs',
+        'louvain1',
         'louvain3',
         'kmeans',
         'kmeans+++',
         'kmeans++',
     ]
 
-    not_replace = set([ 'louvain3', 'kmeans++', 'dropClust' ])
+    not_replace = set([ 'kmeans++', 'dropClust' ])
 
     assert(len(sampling_fns) == len(sampling_fn_names))
 
@@ -347,6 +362,39 @@ def experiment_stats(of, X_dimred, samp_idx, name, **kwargs):
         )
         stats.append(dist.min(0).max())
 
+    if 'kmeans_ami' in kwargs and kwargs['kmeans_ami']:
+        cell_labels = kwargs['cell_labels']
+        
+        k = len(set(cell_labels))
+        km = KMeans(n_clusters=k, n_init=1, random_state=kwargs['seed'])
+        km.fit(X_dimred[samp_idx, :])
+
+        full_labels = label_approx(X_dimred, X_dimred[samp_idx, :], km.labels_)
+                
+        ami = adjusted_mutual_info_score(cell_labels, full_labels)
+        bami = adjusted_mutual_info_score(
+            cell_labels, full_labels, dist='balanced'
+        )
+        stats.append(ami)
+        stats.append(bami)
+
+    if 'louvain_ami' in kwargs and kwargs['louvain_ami']:
+        cell_labels = kwargs['cell_labels']
+        
+        adata = AnnData(X=X_dimred[samp_idx, :])
+        sc.pp.neighbors(adata, use_rep='X')
+        sc.tl.louvain(adata, resolution=1., key_added='louvain')
+        louv_labels = np.array(adata.obs['louvain'].tolist())
+
+        full_labels = label_approx(X_dimred, X_dimred[samp_idx, :], louv_labels)
+
+        ami = adjusted_mutual_info_score(cell_labels, full_labels)
+        bami = adjusted_mutual_info_score(
+            cell_labels, full_labels, dist='balanced'
+        )
+        stats.append(ami)
+        stats.append(bami)
+        
     of.write('\t'.join([ str(stat) for stat in stats ]) + '\n')
     of.flush()
     
@@ -472,9 +520,6 @@ def experiment_kmeans_ce(X, name, cell_labels, n_seeds=10, N=None):
     of.close()
 
 def experiment_louvain_ce(X, name, cell_labels, n_seeds=10, N=None):
-    from anndata import AnnData
-    import scanpy.api as sc
-    
     sampling_fns = [
         uniform,
         gs,

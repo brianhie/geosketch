@@ -31,27 +31,30 @@ if __name__ == '__main__':
     U, s, Vt = pca(normalize(X), k=k)
     X_dimred = U[:, :k] * s[:k]
 
-    cell_labels = (
+    labels = (
         open('data/cell_labels/jurkat_293t_99_1_clusters.txt')
         .read().rstrip().split()
     )
-    le = LabelEncoder().fit(cell_labels)
-    cell_labels = le.transform(cell_labels)
+    le = LabelEncoder().fit(labels)
+    cell_labels = le.transform(labels)
 
+    experiments(
+        X_dimred, NAMESPACE,
+        cell_labels=cell_labels,
+        kmeans_ami=True, louvain_ami=True,
+        rare=True,
+        rare_label=le.transform(['293t'])[0],
+        #entropy=True,
+        #max_min_dist=True
+    )
+    exit()
+
+    from differential_entropies import differential_entropies
+    differential_entropies(X_dimred, labels)
+    
     experiment_kmeans_ce(X_dimred, NAMESPACE, cell_labels, n_seeds=10, N=100)
     experiment_louvain_ce(X_dimred, NAMESPACE, cell_labels, n_seeds=10, N=100)
 
-    exit()
-    
-    experiments(
-        X_dimred, NAMESPACE,
-        rare=True, cell_labels=cell_labels,
-        rare_label=le.transform(['293t'])[0],
-        entropy=True,
-        max_min_dist=True
-    )
-
-    exit()
     rare(X_dimred, NAMESPACE, cell_labels, le.transform(['293t'])[0])
     
     balance(X_dimred, NAMESPACE, cell_labels)

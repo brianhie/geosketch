@@ -63,13 +63,17 @@ if __name__ == '__main__':
     #
     #np.savetxt('data/cell_labels/zeisel_louvain.txt', cell_labels)
     
-    cell_labels = (
+    labels = (
         open('data/cell_labels/zeisel_cluster.txt')
         .read().rstrip().split('\n')
     )
-    le = LabelEncoder().fit(cell_labels)
-    cell_labels = le.transform(cell_labels)
+    le = LabelEncoder().fit(labels)
+    cell_labels = le.transform(labels)
     
+    from differential_entropies import differential_entropies
+    differential_entropies(X_dimred, labels)
+
+    exit()
     embedding = visualize(
         [ X_dimred[samp_idx, :] ], cell_labels[samp_idx],
         NAMESPACE + '_uni{}'.format(len(samp_idx)),
