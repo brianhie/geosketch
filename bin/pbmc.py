@@ -55,6 +55,24 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(labels)
     cell_labels = le.transform(labels)
 
+    experiment_gs(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        kmeans=False, visualize_orig=False
+    )
+    experiment_uni(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        kmeans=False, visualize_orig=False
+    )
+    experiment_srs(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        kmeans=False, visualize_orig=False
+    )
+    experiment_kmeanspp(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        kmeans=False, visualize_orig=False
+    )
+    exit()
+    
     experiments(
         X_dimred, NAMESPACE,
         cell_labels=cell_labels,

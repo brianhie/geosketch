@@ -95,7 +95,7 @@ if __name__ == '__main__':
     log('Scanorama integration geosketch')
     datasets_dimred, genes = integrate(
         datasets, genes_list, batch_size=1000, geosketch=True, dimred=20,
-        geosketch_max=2000, knn=30, n_iter=20,
+        geosketch_max=2000, knn=30, n_iter=100,
     )
     log('Done')
 
