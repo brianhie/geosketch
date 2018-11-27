@@ -48,12 +48,12 @@ if __name__ == '__main__':
     U, s, Vt = pca(normalize(X), k=k)
     X_dimred = U[:, :k] * s[:k]
 
-    cell_labels = (
+    labels = (
         open('data/cell_labels/pbmc_facs_cluster.txt')
         .read().rstrip().split()
     )
-    le = LabelEncoder().fit(cell_labels)
-    cell_labels = le.transform(cell_labels)
+    le = LabelEncoder().fit(labels)
+    cell_labels = le.transform(labels)
 
     experiments(
         X_dimred, NAMESPACE,
@@ -64,14 +64,3 @@ if __name__ == '__main__':
         #entropy=True,
         #max_min_dist=True
     )
-
-    exit()
-    
-    experiment_kmeans_ce(X_dimred, NAMESPACE, cell_labels, n_seeds=2)
-    experiment_louvain_ce(X_dimred, NAMESPACE, cell_labels, n_seeds=2)
-
-    experiment_kmeans_ari(X_dimred, NAMESPACE)
-    
-    rare(X_dimred, NAMESPACE, cell_labels, le.transform(['cd14_monocytes'])[0])
-    
-    balance(X_dimred, NAMESPACE, cell_labels)

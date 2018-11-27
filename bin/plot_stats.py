@@ -73,10 +73,12 @@ def plot_stats(stat, samp_fns=None, fname=None, dtype=float,
         for N in samp_fns[(samp_fn, replace)]:
             if max_N is not None and N > max_N:
                 continue
-            Ns.append(N)
             stat_vals = [ dtype(stat_dict[stat])
                           for stat_dict in samp_fns[(samp_fn, replace)][N]
                           if stat in stat_dict ]
+            if len(stat_vals) == 0:
+                continue
+            Ns.append(N)
             means.append(np.mean(stat_vals))
             sems.append(ss.sem(stat_vals))
             
@@ -86,7 +88,7 @@ def plot_stats(stat, samp_fns=None, fname=None, dtype=float,
         sems = np.array(sems)[sort_idx]
 
         label = '{}_{}'.format(samp_fn, replace)
-        
+
         plt.plot(Ns, means, color=colors[c_idx], label=label)
         plt.scatter(Ns, means, color=colors[c_idx])
         plt.fill_between(Ns, means - sems, means + sems, alpha=0.3,

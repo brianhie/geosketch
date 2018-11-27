@@ -48,8 +48,8 @@ if __name__ == '__main__':
         X_dimred = np.loadtxt('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE))
 
     from ample import gs, uniform
-    #samp_idx = gs(X_dimred, 20000, replace=False)
-    samp_idx = uniform(X_dimred, 20000, replace=False)
+    samp_idx = gs(X_dimred, 20000, replace=False)
+    #samp_idx = uniform(X_dimred, 20000, replace=False)
     
     #from anndata import AnnData
     #import scanpy.api as sc
@@ -70,13 +70,9 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(labels)
     cell_labels = le.transform(labels)
     
-    from differential_entropies import differential_entropies
-    differential_entropies(X_dimred, labels)
-
-    exit()
     embedding = visualize(
         [ X_dimred[samp_idx, :] ], cell_labels[samp_idx],
-        NAMESPACE + '_uni{}'.format(len(samp_idx)),
+        NAMESPACE + '_srs{}'.format(len(samp_idx)),
         [ str(ct) for ct in sorted(set(cell_labels)) ],
         perplexity=100, n_iter=500, image_suffix='.png',
         viz_cluster=True
@@ -153,3 +149,14 @@ if __name__ == '__main__':
     
     #visualize_dropout(X, embedding, image_suffix='.png',
     #                  viz_prefix=NAMESPACE + '_dropout')
+    
+    experiments(
+        X_dimred, NAMESPACE, n_seeds=2,
+        cell_labels=cell_labels,
+        kmeans_ami=True, louvain_ami=True,
+        rare=True,
+        rare_label=le.transform(['Ependymal'])[0],
+    )
+
+    from differential_entropies import differential_entropies
+    differential_entropies(X_dimred, labels)
