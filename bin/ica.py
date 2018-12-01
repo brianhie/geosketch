@@ -66,7 +66,7 @@ def avg_norm_entropy(ds_labels, cluster_labels):
     return np.mean(Hs)
 
 if __name__ == '__main__':
-    datasets_full, genes_list, n_cells = load_names(data_names)
+    datasets_full, genes_list, n_cells = load_names(data_names, norm=False)
     datasets, genes = merge_datasets(datasets_full, genes_list)
     datasets_dimred, genes = process_data(datasets, genes)
     
@@ -79,30 +79,30 @@ if __name__ == '__main__':
         curr_label += 1
     labels = np.array(labels, dtype=int)
 
+    log('Harmony (regular)...')
+    harmony_full = np.concatenate(harmony(datasets_dimred[:]))
+
+    log('Harmony + GeoSketch...')
+    harmony_sketch = np.concatenate(integrate_sketch(datasets_dimred[:], harmony))
+    
     log('Scanorama + GeoSketch...')
     scanorama_sketch = np.concatenate(integrate_sketch(
         datasets_dimred[:], assemble, integration_fn_args={ 'knn': 30 }, n_iter=12
     ))
-
-    log('Harmony + GeoSketch...')
-    harmony_sketch = np.concatenate(integrate_sketch(datasets_dimred[:], harmony))
-
+    
     log('Scanorama (regular)...')
     scanorama_full = np.concatenate(assemble(datasets_dimred[:], knn=200,
                                              batch_size=1000))
     
-    log('Harmony (regular)...')
-    harmony_full = np.concatenate(harmony(datasets_dimred[:]))
-
     log('Done integrating.')
     
     idx = np.random.choice(sum([ ds.shape[0] for ds in datasets ]),
                            size=20000, replace=False)
 
-    integrations = [ harmony_sketch, scanorama_sketch,
-                     harmony_full, scanorama_full ]
-    integration_names = [ 'harmony_sketch', 'scanorama_sketch',
-                          'harmony_full', 'scanorama_full' ]
+    integrations = [ #harmony_sketch, scanorama_sketch,
+                     harmony_full, ]#scanorama_full ]
+    integration_names = [ #'harmony_sketch', 'scanorama_sketch',
+                          'harmony_full', ]#'scanorama_full' ]
     
     for integration, name in zip(integrations, integration_names):
         embedding = visualize(

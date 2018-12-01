@@ -24,7 +24,7 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
     if k == 'auto':
         k = int(np.sqrt(n_samples))
 
-    X -= X.min(0)
+    X = X - X.min(0)
     X /= X.max()
 
     X_ptp = X.ptp(0)
@@ -137,7 +137,7 @@ def gs_grid(X, N, k='auto', seed=None, replace=False,
     if k == 'auto':
         k = int(np.sqrt(n_samples))
 
-    X -= X.min(0)
+    X = X - X.min(0)
     X /= X.max()
 
     low_unit, high_unit = 0., np.max(X)
@@ -262,6 +262,17 @@ def gs_exact(X, N, k='auto', seed=None, replace=False,
         iter_i += 1
 
     return ge_idx
+
+def srs_center(X, N, **kwargs):
+    return srs(X - X.mean(0), N, **kwargs)
+
+def srs_positive(X, N, **kwargs):
+    return srs(X - X.min(0), N, **kwargs)
+
+def srs_unit(X, N, **kwargs):
+    X = X - X.min(0)
+    X /= X.max()
+    return srs(X, N, **kwargs)
 
 def srs(X, N, seed=None, replace=False, prenormalized=False):
     n_samples, n_features = X.shape

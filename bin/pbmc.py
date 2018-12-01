@@ -32,9 +32,6 @@ def plot(X, title, labels, bold=None):
     plt.savefig('{}.png'.format(title))
     
 if __name__ == '__main__':
-    from process import process
-    process(data_names, min_trans=0)
-    
     datasets, genes_list, n_cells = load_names(data_names, norm=False)
     datasets, genes = merge_datasets(datasets, genes_list)
     X = vstack(datasets)
@@ -72,8 +69,8 @@ if __name__ == '__main__':
         X_dimred, NAMESPACE,
         cell_labels=cell_labels,
         kmeans_nmi=True, louvain_nmi=True,
-        #rare=True,
-        #rare_label=le.transform(['cd14_monocytes'])[0],
+        rare=True,
+        rare_label=le.transform(['4'])[0],
         #entropy=True,
         #max_min_dist=True
     )

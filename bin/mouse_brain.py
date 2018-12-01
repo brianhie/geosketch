@@ -96,19 +96,27 @@ if __name__ == '__main__':
     cell_names = sorted(set(labels))
     cell_labels = le.transform(labels)
     
-    #from ample import srs
-    #samp_idx = srs(X_dimred, 20000, replace=False)
-    #embedding = visualize(
-    #    [ X_dimred[samp_idx, :] ], cell_labels[samp_idx],
-    #    NAMESPACE + '_srstop{}'.format(len(samp_idx)),
-    #    [ str(ct) for ct in sorted(set(cell_labels)) ],
-    #    perplexity=100, n_iter=500, image_suffix='.png',
-    #)
-    experiment_srs(
-        X_dimred, NAMESPACE, cell_labels=cell_labels,
-        #gene_names=viz_genes, genes=genes,
-        #gene_expr=vstack(datasets),
-        N_only=20000, kmeans=False, visualize_orig=False
+    from ample import srs_center, srs_positive, srs_unit
+    samp_idx = srs_center(X_dimred, 20000, replace=False)
+    embedding = visualize(
+        [ X_dimred[samp_idx, :] ], cell_labels[samp_idx],
+        NAMESPACE + '_srs_center{}'.format(len(samp_idx)),
+        [ str(ct) for ct in sorted(set(cell_labels)) ],
+        perplexity=100, n_iter=500, image_suffix='.png',
+    )
+    samp_idx = srs_positive(X_dimred, 20000, replace=False)
+    embedding = visualize(
+        [ X_dimred[samp_idx, :] ], cell_labels[samp_idx],
+        NAMESPACE + '_srs_positive{}'.format(len(samp_idx)),
+        [ str(ct) for ct in sorted(set(cell_labels)) ],
+        perplexity=100, n_iter=500, image_suffix='.png',
+    )
+    samp_idx = srs_unit(X_dimred, 20000, replace=False)
+    embedding = visualize(
+        [ X_dimred[samp_idx, :] ], cell_labels[samp_idx],
+        NAMESPACE + '_srs_unit{}'.format(len(samp_idx)),
+        [ str(ct) for ct in sorted(set(cell_labels)) ],
+        perplexity=100, n_iter=500, image_suffix='.png',
     )
     exit()
     

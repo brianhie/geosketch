@@ -18,8 +18,8 @@ METHOD = 'svd'
 DIMRED = 30
 
 data_names = [
-    #'data/ica/ica_bone_marrow_h5',
     'data/ica/ica_cord_blood_h5',
+    'data/ica/ica_bone_marrow_h5',
 ]
 
 def auroc(X, genes, labels, focus, background=None, cutoff=0.7):
@@ -51,19 +51,23 @@ def auroc(X, genes, labels, focus, background=None, cutoff=0.7):
             print('{}\t{}'.format(gene, auroc))
         
 if __name__ == '__main__':
-    datasets, genes_list, n_cells = load_names(data_names)
+    datasets, genes_list, n_cells = load_names(data_names, norm=False)
 
     for name, dataset, genes in zip(data_names, datasets, genes_list):
 
         name = name.split('/')[-1]
 
-        X = np.log1p(normalize(dataset))
+        X = normalize(dataset)
 
         k = DIMRED
-        U, s, Vt = pca(normalize(X), k=k)
+        U, s, Vt = pca(X, k=k)
         X_dimred = U[:, :k] * s[:k]
 
-        viz_genes = [ 'CD14', 'CD68', ]
+        viz_genes = [
+            'CD14', 'CD68',
+            'S100A8', 'S100A9', 'P4B', 'HBB',
+            'CD4', 'CD19', 'CD34', 'CD56', 'CD8'
+        ]
 
         from ample import gs
         samp_idx = gs(X_dimred, 20000, replace=False)
@@ -87,6 +91,7 @@ if __name__ == '__main__':
             [ X_dimred[samp_idx] ], cell_labels,
             name + '_louvain',
             [ str(ct) for ct in sorted(set(louv_labels)) ],
+            gene_names=viz_genes, gene_expr=X_samp, genes=genes,
             perplexity=100, n_iter=500, image_suffix='.png',
             viz_cluster=True
         )
