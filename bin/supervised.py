@@ -143,7 +143,7 @@ def balanced_contingency_matrix(labels_true, labels_pred):
     balanced = np.zeros(contingency.shape)
 
     for i in range(contingency.shape[0]):
-        balanced[i] = contingency[i] * factor[i]
+        balanced[i, :] = contingency[i, :] * factor[i]
 
     return balanced
 
@@ -646,7 +646,7 @@ def mutual_info_score(labels_true, labels_pred, contingency=None):
     log_contingency_nm = np.log(nz_val)
     contingency_nm = nz_val / contingency_sum
     # Don't need to calculate the full outer product, just for non-zeroes
-    outer = pi.take(nzx).astype(np.int64) * pj.take(nzy).astype(np.int64)
+    outer = pi.take(nzx).astype(np.float64) * pj.take(nzy).astype(np.float64)
     log_outer = -np.log(outer) + log(pi.sum()) + log(pj.sum())
     mi = (contingency_nm * (log_contingency_nm - log(contingency_sum)) +
           contingency_nm * log_outer)
@@ -769,7 +769,7 @@ def adjusted_mutual_info_score(labels_true, labels_pred,
     
     # Calculate entropy for each labeling
     if dist == 'balanced':
-        h_true, h_pred = log(classes.shape[0]), log(clusters.shape[0])
+        h_true, h_pred = log(classes.shape[0]), entropy(labels_pred)
     else:
         h_true, h_pred = entropy(labels_true), entropy(labels_pred)
         
@@ -788,7 +788,7 @@ def adjusted_mutual_info_score(labels_true, labels_pred,
 
 
 def normalized_mutual_info_score(labels_true, labels_pred,
-                                 average_method='warn'):
+                                 average_method='arithmetic', dist='normal'):
     """Normalized Mutual Information between two clusterings.
 
     Normalized Mutual Information (NMI) is a normalization of the Mutual
@@ -875,14 +875,23 @@ def normalized_mutual_info_score(labels_true, labels_pred,
     if (classes.shape[0] == clusters.shape[0] == 1 or
             classes.shape[0] == clusters.shape[0] == 0):
         return 1.0
-    contingency = contingency_matrix(labels_true, labels_pred, sparse=True)
+
+    if dist == 'balanced':
+        contingency = balanced_contingency_matrix(labels_true, labels_pred)
+    else:
+        contingency = contingency_matrix(labels_true, labels_pred, sparse=True)
     contingency = contingency.astype(np.float64)
+    
     # Calculate the MI for the two clusterings
     mi = mutual_info_score(labels_true, labels_pred,
                            contingency=contingency)
+    
     # Calculate the expected value for the mutual information
     # Calculate entropy for each labeling
-    h_true, h_pred = entropy(labels_true), entropy(labels_pred)
+    if dist == 'balanced':
+        h_true, h_pred = log(classes.shape[0]), entropy_pi(contingency.sum(0))
+    else:
+        h_true, h_pred = entropy(labels_true), entropy(labels_pred)
     normalizer = _generalized_average(h_true, h_pred, average_method)
     # Avoid 0.0 / 0.0 when either entropy is zero.
     normalizer = max(normalizer, np.finfo('float64').eps)
@@ -983,3 +992,11 @@ def entropy(labels):
     # log(a / b) should be calculated as log(a) - log(b) for
     # possible loss of precision
     return -np.sum((pi / pi_sum) * (np.log(pi) - log(pi_sum)))
+
+def entropy_pi(pi):
+    pi = pi[pi > 0]
+    pi_sum = np.sum(pi)
+    # log(a / b) should be calculated as log(a) - log(b) for
+    # possible loss of precision
+    return -np.sum((pi / pi_sum) * (np.log(pi) - log(pi_sum)))
+    

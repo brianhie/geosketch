@@ -3,8 +3,9 @@ import os
 from scanorama import *
 from scipy.sparse import vstack
 
-from process import load_names
 from experiments import *
+from integration import harmony, integrate_sketch
+from process import load_names
 from utils import *
 
 np.random.seed(0)
@@ -65,8 +66,10 @@ def avg_norm_entropy(ds_labels, cluster_labels):
     return np.mean(Hs)
 
 if __name__ == '__main__':
-    datasets, genes_list, n_cells = load_names(data_names)
-
+    datasets_full, genes_list, n_cells = load_names(data_names)
+    datasets, genes = merge_datasets(datasets_full, genes_list)
+    datasets_dimred, genes = process_data(datasets, genes)
+    
     labels = []
     names = []
     curr_label = 0
@@ -75,27 +78,48 @@ if __name__ == '__main__':
         names.append(data_names[i])
         curr_label += 1
     labels = np.array(labels, dtype=int)
-    
-    idx = np.random.choice(
-        sum([ ds.shape[0] for ds in datasets ]), size=20000, replace=False
-    )
 
-    harmony_dimred = np.loadtxt('data/harmony_ica.txt')
+    log('Scanorama + GeoSketch...')
+    scanorama_sketch = np.concatenate(integrate_sketch(
+        datasets_dimred[:], assemble, integration_fn_args={ 'knn': 30 }, n_iter=12
+    ))
+
+    log('Harmony + GeoSketch...')
+    harmony_sketch = np.concatenate(integrate_sketch(datasets_dimred[:], harmony))
+
+    log('Scanorama (regular)...')
+    scanorama_full = np.concatenate(assemble(datasets_dimred[:], knn=200,
+                                             batch_size=1000))
     
-    embedding = visualize(
-        [ harmony_dimred[idx] ], labels[idx],
-        NAMESPACE + '_harmony',
-        [ str(ct) for ct in sorted(set(labels)) ],
-        perplexity=100, n_iter=500, image_suffix='.png',
-        viz_cluster=True
-    )
+    log('Harmony (regular)...')
+    harmony_full = np.concatenate(harmony(datasets_dimred[:]))
+
+    log('Done integrating.')
     
-    entropy_test(embedding, labels[idx])
+    idx = np.random.choice(sum([ ds.shape[0] for ds in datasets ]),
+                           size=20000, replace=False)
+
+    integrations = [ harmony_sketch, scanorama_sketch,
+                     harmony_full, scanorama_full ]
+    integration_names = [ 'harmony_sketch', 'scanorama_sketch',
+                          'harmony_full', 'scanorama_full' ]
     
+    for integration, name in zip(integrations, integration_names):
+        embedding = visualize(
+            [ integration[idx] ], labels[idx], name,
+            [ str(ct) for ct in sorted(set(labels)) ],
+            perplexity=100, n_iter=500, image_suffix='.png',
+            viz_cluster=False
+        )
+        print(name)
+        entropy_test(embedding, labels[idx])
+
+    exit()
+
     log('Scanorama integration geosketch')
     datasets_dimred, genes = integrate(
         datasets, genes_list, batch_size=1000, geosketch=True, dimred=20,
-        geosketch_max=2000, knn=30, n_iter=100,
+        geosketch_max=2000, knn=30, n_iter=20,
     )
     log('Done')
 
@@ -140,9 +164,8 @@ if __name__ == '__main__':
     )
     
     entropy_test(embedding, labels[idx])
-    
-    exit()
 
+    datasets, genes_list, n_cells = load_names(data_names)
     datasets, genes = merge_datasets(datasets, genes_list)
     X = vstack(datasets)
 

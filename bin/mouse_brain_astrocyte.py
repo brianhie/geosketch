@@ -119,16 +119,21 @@ if __name__ == '__main__':
     aob_labels = []
     for cl in cell_labels:
         if cl in focus:
-            labels.append(0)
+            labels.append(2)
             aob_labels.append('both')
         elif cl in astro or cl in oligo:
-            labels.append(1)
             if cl in astro:
-                aob_labels.append('astro')
+                if cl == 5:
+                    aob_labels.append('bergman')
+                    labels.append(3)
+                else:
+                    aob_labels.append('astro')
+                    labels.append(0)
             else:
                 aob_labels.append('oligo')
+                labels.append(1)
         else:
-            labels.append(2)
+            labels.append(4)
             aob_labels.append('none')
     labels = np.array(labels)
     aob_labels = np.array(aob_labels)
@@ -148,7 +153,7 @@ if __name__ == '__main__':
     astro_oligo_violin(X, genes, 'PLP1', aob_labels, NAMESPACE)
 
     viz_genes = [
-        'SLC1A3', #'GJA1', 'MBP', 'PLP1', 'TRF',
+        'SLC1A3', 'GJA1', 'MBP', 'PLP1', 'TRF',
         #'CST3', 'CPE', 'FTH1', 'APOE', 'MT1', 'NDRG2', 'TSPAN7',
         #'PLP1', 'MAL', 'PTGDS', 'CLDN11', 'APOD', 'QDPR', 'MAG', 'ERMN',
         #'PLP1', 'MAL', 'PTGDS', 'MAG', 'CLDN11', 'APOD', 'FTH1',
@@ -164,9 +169,9 @@ if __name__ == '__main__':
     cell_labels = le.transform(cell_labels)
     
     embedding = visualize(
-        [ X_dimred[samp_idx, :] ], cell_labels[samp_idx],
+        [ X_dimred[samp_idx, :] ], labels,
         NAMESPACE + '_astro{}'.format(len(samp_idx)),
-        [ str(ct) for ct in sorted(set(cell_labels)) ],
+        [ str(ct) for ct in sorted(set(labels)) ],
         gene_names=viz_genes, gene_expr=X, genes=genes,
         perplexity=100, n_iter=500, image_suffix='.png',
         viz_cluster=True

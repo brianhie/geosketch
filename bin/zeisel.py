@@ -47,11 +47,6 @@ if __name__ == '__main__':
     else:
         X_dimred = np.loadtxt('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE))
 
-    from ample import gs, uniform, srs
-    #samp_idx = gs(X_dimred, 20000, replace=False)
-    #samp_idx = uniform(X_dimred, 20000, replace=False)
-    samp_idx = srs(X_dimred, 20000, replace=False)
-    
     #from anndata import AnnData
     #import scanpy.api as sc
     #adata = AnnData(X=X_dimred[samp_idx, :])
@@ -70,24 +65,41 @@ if __name__ == '__main__':
     )
     le = LabelEncoder().fit(labels)
     cell_labels = le.transform(labels)
-    
+
     experiments(
         X_dimred, NAMESPACE, n_seeds=2,
         cell_labels=cell_labels,
-        kmeans_ami=True, louvain_ami=True,
+        louvain_nmi=True, spectral_nmi=True,
         rare=True,
         rare_label=le.transform(['Ependymal'])[0],
     )
     exit()
 
+    from ample import gs, uniform, srs
+    samp_idx = gs(X_dimred, 20000, replace=False)
+    #samp_idx = uniform(X_dimred, 20000, replace=False)
+    #samp_idx = srs(X_dimred, 20000, replace=False)
+    
+    viz_genes = [
+        'SLC1A3',# 'GJA1', 'MBP', 'PLP1', 'TRF',
+        #'GJA1', 'MBP', 'PLP1', 'TRF',
+        #'CST3', 'CPE', 'FTH1', 'APOE', 'MT1', 'NDRG2', 'TSPAN7',
+        #'PLP1', 'MAL', 'PTGDS', 'CLDN11', 'APOD', 'QDPR', 'MAG', 'ERMN',
+        #'PLP1', 'MAL', 'PTGDS', 'MAG', 'CLDN11', 'APOD', 'FTH1',
+        #'ERMN', 'MBP', 'ENPP2', 'QDPR', 'MOBP', 'TRF',
+        #'CST3', 'SPARCL1', 'PTN', 'CD81', 'APOE', 'ATP1A2', 'ITM2B'
+    ]
+    
+    X = np.log1p(normalize(X[samp_idx, :]))
+
     embedding = visualize(
         [ X_dimred[samp_idx, :] ], cell_labels[samp_idx],
-        NAMESPACE + '_srs{}'.format(len(samp_idx)),
+        NAMESPACE + '_astro{}'.format(len(samp_idx)),
         [ str(ct) for ct in sorted(set(cell_labels)) ],
+        gene_names=viz_genes, gene_expr=X, genes=genes,
         perplexity=100, n_iter=500, image_suffix='.png',
-        viz_cluster=True
+        #viz_cluster=True
     )
-    exit()
     
     cell_labels = (
         open('data/cell_labels/zeisel_louvain.txt')
@@ -118,8 +130,6 @@ if __name__ == '__main__':
     labels = np.array(labels)
     aob_labels = np.array(aob_labels)
 
-    X = np.log1p(normalize(X[samp_idx, :]))
-
     from mouse_brain_astrocyte import astro_oligo_joint, astro_oligo_violin
     #astro_oligo_joint(X, genes, 'GJA1', 'MBP', aob_labels, 'astro', NAMESPACE)
     #astro_oligo_joint(X, genes, 'GJA1', 'MBP', aob_labels, 'oligo', NAMESPACE)
@@ -132,33 +142,9 @@ if __name__ == '__main__':
     astro_oligo_violin(X, genes, 'MBP', aob_labels, NAMESPACE)
     astro_oligo_violin(X, genes, 'PLP1', aob_labels, NAMESPACE)
     
-    viz_genes = [
-        #'GJA1', 'MBP', 'PLP1', 'TRF',
-        #'CST3', 'CPE', 'FTH1', 'APOE', 'MT1', 'NDRG2', 'TSPAN7',
-        #'PLP1', 'MAL', 'PTGDS', 'CLDN11', 'APOD', 'QDPR', 'MAG', 'ERMN',
-        #'PLP1', 'MAL', 'PTGDS', 'MAG', 'CLDN11', 'APOD', 'FTH1',
-        #'ERMN', 'MBP', 'ENPP2', 'QDPR', 'MOBP', 'TRF',
-        #'CST3', 'SPARCL1', 'PTN', 'CD81', 'APOE', 'ATP1A2', 'ITM2B'
-    ]
-    
-    cell_labels = (
-        open('data/cell_labels/zeisel_cluster.txt')
-        .read().rstrip().split('\n')
-    )
-    le = LabelEncoder().fit(cell_labels)
-    cell_labels = le.transform(cell_labels)
-    
-    embedding = visualize(
-        [ X_dimred[samp_idx, :] ], cell_labels[samp_idx],
-        NAMESPACE + '_astro{}'.format(len(samp_idx)),
-        [ str(ct) for ct in sorted(set(cell_labels)) ],
-        gene_names=viz_genes, gene_expr=X, genes=genes,
-        perplexity=100, n_iter=500, image_suffix='.png',
-        viz_cluster=True
-    )
-    
-    #visualize_dropout(X, embedding, image_suffix='.png',
-    #                  viz_prefix=NAMESPACE + '_dropout')
-    
     from differential_entropies import differential_entropies
     differential_entropies(X_dimred, labels)
+
+    visualize_dropout(X, embedding, image_suffix='.png',
+                      viz_prefix=NAMESPACE + '_dropout')
+    

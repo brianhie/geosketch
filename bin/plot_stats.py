@@ -43,7 +43,8 @@ def plot_stats(stat, samp_fns=None, fname=None, dtype=float,
         
     colors = [
         '#377eb8', '#ff7f00', '#4daf4a',
-        '#f781bf', '#a65628', '#984ea3',
+        '#984ea3',
+        #'#f781bf', '#a65628', '#984ea3',
         '#999999', '#e41a1c', '#dede00',
         '#ffe119', '#e6194b', '#ffbea3',
         '#911eb4', '#46f0f0', '#f032e6',
@@ -114,10 +115,10 @@ if __name__ == '__main__':
         'gs_grid',
         'gs_gap',
         'srs',
-        'louvain1',
-        'louvain3',
+        #'louvain1',
+        #'louvain3',
         'kmeans++',
-        'kmeans+++',
+        #'kmeans+++',
     ])
     
     plot_stats(sys.argv[1], fname=sys.argv[2],

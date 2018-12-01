@@ -6,6 +6,7 @@ import scanpy.api as sc
 import scipy.stats
 from scipy.sparse import vstack
 from sklearn.cluster import KMeans
+from sklearn.cluster import SpectralClustering
 from sklearn.metrics import adjusted_rand_score
 from sklearn.metrics import pairwise_distances
 from sklearn.preprocessing import LabelEncoder
@@ -16,6 +17,7 @@ from time import time
 from process import load_names
 from save_mtx import save_mtx
 from supervised import adjusted_mutual_info_score
+from supervised import normalized_mutual_info_score
 from ample import *
 from utils import *
 
@@ -80,6 +82,7 @@ def experiment_kmeanspp(X_dimred, name, **kwargs):
     experiment(kmeanspp, X_dimred, name, **kwargs)
     
 def experiment_srs(X_dimred, name, **kwargs):
+    #from ample import srs
     kwargs['sample_type'] = 'srs'
     experiment(srs, X_dimred, name, **kwargs)
 
@@ -91,8 +94,12 @@ def experiment_uni(X_dimred, name, **kwargs):
     kwargs['sample_type'] = 'uni'
     experiment(uniform, X_dimred, name, **kwargs)
     
+def experiment_louvain(X_dimred, name, **kwargs):
+    kwargs['sample_type'] = 'louvain'
+    experiment(louvain1, X_dimred, name, **kwargs)
+    
 def experiment(sampling_fn, X_dimred, name, cell_labels=None,
-               kmeans=True, visualize_orig=True,
+               N_only=None, kmeans=True, visualize_orig=True,
                downsample=True, n_downsample=100000,
                gene_names=None, gene_expr=None, genes=None,
                perplexity=500, kmeans_k=10, sample_type=''):
@@ -148,7 +155,10 @@ def experiment(sampling_fn, X_dimred, name, cell_labels=None,
 
     # Downsample while preserving structure and visualize.
 
-    Ns = [ 1000, 5000, 10000, 20000, 50000 ]
+    if N_only is None:
+        Ns = [ 1000, 5000, 10000, 20000, 50000 ]
+    else:
+        Ns = [ N_only ]
 
     for N in Ns:
         if N >= X_dimred.shape[0]:
@@ -170,6 +180,7 @@ def experiment(sampling_fn, X_dimred, name, cell_labels=None,
         visualize([ X_dimred[samp_idx, :] ], cell_labels[samp_idx],
                   name + '_{}{}'.format(sample_type, N), cell_types,
                   gene_names=gene_names, gene_expr=expr, genes=genes,
+                  #perplexity=5, n_iter=500,
                   perplexity=max(N/200, 50), n_iter=500,
                   size=max(int(30000/N), 1), image_suffix='.png')
 
@@ -220,45 +231,58 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
     if 'max_min_dist' in kwargs and kwargs['max_min_dist']:
         columns.append('max_min_dist')
         
-    if 'kmeans_ami' in kwargs and kwargs['kmeans_ami']:
+    if 'kmeans_nmi' in kwargs and kwargs['kmeans_nmi']:
         if not 'cell_labels' in kwargs:
             err_exit('cell_labels')
-        columns.append('kmeans_ami')
-        columns.append('kmeans_bami')
+        columns.append('kmeans_nmi')
+        columns.append('kmeans_bnmi')
         
-    if 'louvain_ami' in kwargs and kwargs['louvain_ami']:
+    if 'spectral_nmi' in kwargs and kwargs['spectral_nmi']:
         if not 'cell_labels' in kwargs:
             err_exit('cell_labels')
-        columns.append('louvain_ami')
-        columns.append('louvain_bami')
+        columns.append('spectral_nmi')
+        columns.append('spectral_bnmi')
         
-    of = open('target/experiments/{}.txt.1'.format(name), 'a')
+    if 'louvain_nmi' in kwargs and kwargs['louvain_nmi']:
+        if not 'cell_labels' in kwargs:
+            err_exit('cell_labels')
+        columns.append('louvain_nmi')
+        columns.append('louvain_bnmi')
+        columns.append('louvain_n_clusters')
+        
+    of = open('target/experiments/{}.txt.2'.format(name), 'a')
     of.write('\t'.join(columns) + '\n')
     
-    Ns = [ 100, 500, 1000, 5000, 10000, 20000 ]
+    Ns = []
+    for scale in [ 0.02, 0.04, 0.06, 0.08, 0.1 ]:
+        Ns.append(int(scale * X_dimred.shape[0]))
+    Ns = np.array(Ns)
+    while max(Ns) > 20000:
+        Ns = Ns / 2.
+    Ns = [ int(N) for N in Ns ]
 
     sampling_fns = [
         uniform,
         gs_grid,
         gs_gap,
+        kmeanspp,
         srs,
         louvain1,
         louvain3,
         kmeans,
         kmeansppp,
-        kmeanspp,
     ]
     
     sampling_fn_names = [
         'uniform',
         'gs_grid',
         'gs_gap',
+        'kmeans++',
         'srs',
         'louvain1',
         'louvain3',
         'kmeans',
         'kmeans+++',
-        'kmeans++',
     ]
 
     not_replace = set([ 'kmeans++', 'dropClust' ])
@@ -362,7 +386,7 @@ def experiment_stats(of, X_dimred, samp_idx, name, **kwargs):
         )
         stats.append(dist.min(0).max())
 
-    if 'kmeans_ami' in kwargs and kwargs['kmeans_ami']:
+    if 'kmeans_nmi' in kwargs and kwargs['kmeans_nmi']:
         cell_labels = kwargs['cell_labels']
         
         k = len(set(cell_labels))
@@ -371,14 +395,33 @@ def experiment_stats(of, X_dimred, samp_idx, name, **kwargs):
 
         full_labels = label_approx(X_dimred, X_dimred[samp_idx, :], km.labels_)
                 
-        ami = adjusted_mutual_info_score(cell_labels, full_labels)
-        bami = adjusted_mutual_info_score(
+        nmi = normalized_mutual_info_score(cell_labels, full_labels)
+        bnmi = normalized_mutual_info_score(
             cell_labels, full_labels, dist='balanced'
         )
-        stats.append(ami)
-        stats.append(bami)
+        stats.append(nmi)
+        stats.append(bnmi)
+        
+    if 'spectral_nmi' in kwargs and kwargs['spectral_nmi']:
+        cell_labels = kwargs['cell_labels']
+        
+        k = len(set(cell_labels))
+        spect = SpectralClustering(n_clusters=k*2, n_init=1,
+                                   assign_labels='discretize',
+                                   random_state=kwargs['seed'], n_jobs=-1)
+        spect.fit(X_dimred[samp_idx, :])
 
-    if 'louvain_ami' in kwargs and kwargs['louvain_ami']:
+        full_labels = label_approx(X_dimred, X_dimred[samp_idx, :],
+                                   spect.labels_)
+                
+        bnmi = normalized_mutual_info_score(
+            cell_labels, full_labels, dist='balanced'
+        )
+        nmi = normalized_mutual_info_score(cell_labels, full_labels)
+        stats.append(nmi)
+        stats.append(bnmi)
+        
+    if 'louvain_nmi' in kwargs and kwargs['louvain_nmi']:
         cell_labels = kwargs['cell_labels']
         
         adata = AnnData(X=X_dimred[samp_idx, :])
@@ -388,12 +431,13 @@ def experiment_stats(of, X_dimred, samp_idx, name, **kwargs):
 
         full_labels = label_approx(X_dimred, X_dimred[samp_idx, :], louv_labels)
 
-        ami = adjusted_mutual_info_score(cell_labels, full_labels)
-        bami = adjusted_mutual_info_score(
+        nmi = normalized_mutual_info_score(cell_labels, full_labels)
+        bnmi = normalized_mutual_info_score(
             cell_labels, full_labels, dist='balanced'
         )
-        stats.append(ami)
-        stats.append(bami)
+        stats.append(nmi)
+        stats.append(bnmi)
+        stats.append(len(set(louv_labels)))
         
     of.write('\t'.join([ str(stat) for stat in stats ]) + '\n')
     of.flush()

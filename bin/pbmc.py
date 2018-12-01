@@ -9,18 +9,19 @@ from experiments import *
 from process import load_names
 from utils import *
 
-NAMESPACE = 'pbmc_facs'
+NAMESPACE = 'pbmc_68k'
 METHOD = 'svd'
 DIMRED = 100
 
 data_names = [
-    'data/pbmc/10x/b_cells',
-    'data/pbmc/10x/cd14_monocytes',
-    'data/pbmc/10x/cd4_t_helper',
-    'data/pbmc/10x/cd56_nk',
-    'data/pbmc/10x/cytotoxic_t',
-    'data/pbmc/10x/memory_t',
-    'data/pbmc/10x/regulatory_t',
+    'data/pbmc/68k'
+    #'data/pbmc/10x/b_cells',
+    #'data/pbmc/10x/cd14_monocytes',
+    #'data/pbmc/10x/cd4_t_helper',
+    #'data/pbmc/10x/cd56_nk',
+    #'data/pbmc/10x/cytotoxic_t',
+    #'data/pbmc/10x/memory_t',
+    #'data/pbmc/10x/regulatory_t',
 ]
 
 def plot(X, title, labels, bold=None):
@@ -31,6 +32,9 @@ def plot(X, title, labels, bold=None):
     plt.savefig('{}.png'.format(title))
     
 if __name__ == '__main__':
+    from process import process
+    process(data_names, min_trans=0)
+    
     datasets, genes_list, n_cells = load_names(data_names, norm=False)
     datasets, genes = merge_datasets(datasets, genes_list)
     X = vstack(datasets)
@@ -44,41 +48,55 @@ if __name__ == '__main__':
         curr_label += 1
     labels = np.array(labels, dtype=int)
 
-    k = DIMRED
-    U, s, Vt = pca(normalize(X), k=k)
-    X_dimred = U[:, :k] * s[:k]
+    if not os.path.isfile('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE)):
+        log('Dimension reduction with {}...'.format(METHOD))
+        X_dimred = reduce_dimensionality(
+            normalize(X), method=METHOD, dimred=DIMRED
+        )
+        log('Dimensionality = {}'.format(X_dimred.shape[1]))
+        np.savetxt('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE), X_dimred)
+    else:
+        X_dimred = np.loadtxt('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE))
 
     labels = (
-        open('data/cell_labels/pbmc_facs_cluster.txt')
+        open('data/cell_labels/{}_cluster.txt'.format(NAMESPACE))
         .read().rstrip().split()
     )
     le = LabelEncoder().fit(labels)
     cell_labels = le.transform(labels)
 
-    experiment_gs(
-        X_dimred, NAMESPACE, cell_labels=cell_labels,
-        kmeans=False, visualize_orig=False
-    )
-    experiment_uni(
-        X_dimred, NAMESPACE, cell_labels=cell_labels,
-        kmeans=False, visualize_orig=False
-    )
-    experiment_srs(
-        X_dimred, NAMESPACE, cell_labels=cell_labels,
-        kmeans=False, visualize_orig=False
-    )
-    experiment_kmeanspp(
-        X_dimred, NAMESPACE, cell_labels=cell_labels,
-        kmeans=False, visualize_orig=False
-    )
-    exit()
-    
+    X = np.log1p(normalize(X))
+    viz_genes = [ 'CD14' ]
+
     experiments(
         X_dimred, NAMESPACE,
         cell_labels=cell_labels,
-        kmeans_ami=True, louvain_ami=True,
+        kmeans_nmi=True, louvain_nmi=True,
         #rare=True,
         #rare_label=le.transform(['cd14_monocytes'])[0],
         #entropy=True,
         #max_min_dist=True
     )
+    exit()
+    
+    experiment_gs(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        gene_names=viz_genes, genes=genes, gene_expr=X,
+        N_only=20000, kmeans=False, visualize_orig=False
+    )
+    experiment_uni(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        gene_names=viz_genes, genes=genes, gene_expr=X,
+        N_only=20000, kmeans=False, visualize_orig=False
+    )
+    experiment_srs(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        gene_names=viz_genes, genes=genes, gene_expr=X,
+        N_only=20000, kmeans=False, visualize_orig=False
+    )
+    experiment_kmeanspp(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        gene_names=viz_genes, genes=genes, gene_expr=X,
+        N_only=20000, kmeans=False, visualize_orig=False
+    )
+    
