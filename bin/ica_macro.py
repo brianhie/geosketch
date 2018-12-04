@@ -19,7 +19,7 @@ DIMRED = 30
 
 data_names = [
     'data/ica/ica_cord_blood_h5',
-    'data/ica/ica_bone_marrow_h5',
+    #'data/ica/ica_bone_marrow_h5',
 ]
 
 def auroc(X, genes, labels, focus, background=None, cutoff=0.7):
@@ -31,7 +31,7 @@ def auroc(X, genes, labels, focus, background=None, cutoff=0.7):
     else:
         background_idx = background == labels
 
-    y_true = np.zeros(X.shape[0])
+    y_true = np.zeros(sum(focus_idx) + sum(background_idx))
     y_true[:sum(focus_idx)] = 1
 
     data = []
@@ -64,12 +64,13 @@ if __name__ == '__main__':
         X_dimred = U[:, :k] * s[:k]
 
         viz_genes = [
-            'CD14', 'CD68',
-            'S100A8', 'S100A9', 'P4B', 'HBB',
-            'CD4', 'CD19', 'CD34', 'CD56', 'CD8'
+            'PF4', 'CD74', 'JUNB', 'IER2', 'B2M'
+            #'CD14', 'CD68',
+            #'S100A8', 'S100A9', 'PF4', 'HBB',
+            #'CD4', 'CD19', 'CD34', 'CD56', 'CD8'
         ]
 
-        from ample import gs
+        from ample import gs, uniform
         samp_idx = gs(X_dimred, 20000, replace=False)
 
         adata = AnnData(X=X_dimred[samp_idx, :])
@@ -81,11 +82,27 @@ if __name__ == '__main__':
         cell_labels = le.transform(louv_labels)
 
         X_samp = X[samp_idx].tocsc()
-        
-        for label in sorted(set(louv_labels)):
-            log('Label {}'.format(label))
-            auroc(X_samp, genes, louv_labels, label)
-            log('')
+
+        #clusterA = set([ 22 ])
+        #clusterB = set([ 0, 18 ])
+        #
+        #labels = []
+        #for cl in cell_labels:
+        #    if cl in clusterA:
+        #        labels.append(0)
+        #    elif cl in clusterB:
+        #        labels.append(1)
+        #    else:
+        #        labels.append(2)
+        #
+        #auroc(X_samp, genes, np.array(labels), 0, background=1)
+        #
+        #continue
+        #
+        #for label in sorted(set(louv_labels)):
+        #    log('Label {}'.format(label))
+        #    auroc(X_samp, genes, louv_labels, label)
+        #    log('')
 
         embedding = visualize(
             [ X_dimred[samp_idx] ], cell_labels,

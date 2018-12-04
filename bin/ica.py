@@ -79,30 +79,40 @@ if __name__ == '__main__':
         curr_label += 1
     labels = np.array(labels, dtype=int)
 
-    log('Harmony (regular)...')
-    harmony_full = np.concatenate(harmony(datasets_dimred[:]))
+    #log('Harmony (regular)...')
+    #harmony_full = np.concatenate(harmony(datasets_dimred[:]))
 
     log('Harmony + GeoSketch...')
-    harmony_sketch = np.concatenate(integrate_sketch(datasets_dimred[:], harmony))
-    
-    log('Scanorama + GeoSketch...')
-    scanorama_sketch = np.concatenate(integrate_sketch(
-        datasets_dimred[:], assemble, integration_fn_args={ 'knn': 30 }, n_iter=12
+    harmony_sketch = np.concatenate(integrate_sketch(
+        datasets_dimred[:], harmony, N=2000
     ))
+    #harmony_sketch = np.concatenate(
+    #    assemble(datasets_dimred[:], harmony=True, knn=30,
+    #             geosketch=True, geosketch_max=10000)
+    #)
     
-    log('Scanorama (regular)...')
-    scanorama_full = np.concatenate(assemble(datasets_dimred[:], knn=200,
-                                             batch_size=1000))
+    #log('Scanorama + GeoSketch...')
+    #scanorama_sketch = np.concatenate(integrate_sketch(
+    #    datasets_dimred[:], assemble, integration_fn_args={ 'knn': 30 }, n_iter=12
+    #))
+    #
+    #log('Scanorama (regular)...')
+    #scanorama_full = np.concatenate(assemble(datasets_dimred[:], knn=200,
+    #                                         batch_size=1000))
     
     log('Done integrating.')
     
     idx = np.random.choice(sum([ ds.shape[0] for ds in datasets ]),
                            size=20000, replace=False)
 
-    integrations = [ #harmony_sketch, scanorama_sketch,
-                     harmony_full, ]#scanorama_full ]
-    integration_names = [ #'harmony_sketch', 'scanorama_sketch',
-                          'harmony_full', ]#'scanorama_full' ]
+    integrations = [ harmony_sketch, ]
+                     # scanorama_sketch,
+                     #harmony_full,
+                     #scanorama_full ]
+    integration_names = [ 'harmony_sketch', ]
+                          #'scanorama_sketch',
+                          #'harmony_full',
+                          #'scanorama_full' ]
     
     for integration, name in zip(integrations, integration_names):
         embedding = visualize(

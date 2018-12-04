@@ -41,9 +41,9 @@ if __name__ == '__main__':
     experiments(
         X_dimred, NAMESPACE,
         cell_labels=cell_labels,
-        spectral_nmi=True, louvain_nmi=True,
-        rare=True,
-        rare_label=le.transform(['293t'])[0],
+        spectral_nmi=True, louvain_ami=True,
+        #rare=True,
+        #rare_label=le.transform(['293t'])[0],
         #entropy=True,
         #max_min_dist=True
     )

@@ -243,11 +243,11 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
         columns.append('spectral_nmi')
         columns.append('spectral_bnmi')
         
-    if 'louvain_nmi' in kwargs and kwargs['louvain_nmi']:
+    if 'louvain_ami' in kwargs and kwargs['louvain_ami']:
         if not 'cell_labels' in kwargs:
             err_exit('cell_labels')
-        columns.append('louvain_nmi')
-        columns.append('louvain_bnmi')
+        columns.append('louvain_ami')
+        columns.append('louvain_bami')
         columns.append('louvain_n_clusters')
         
     of = open('target/experiments/{}.txt.2'.format(name), 'a')
@@ -421,7 +421,7 @@ def experiment_stats(of, X_dimred, samp_idx, name, **kwargs):
         stats.append(nmi)
         stats.append(bnmi)
         
-    if 'louvain_nmi' in kwargs and kwargs['louvain_nmi']:
+    if 'louvain_ami' in kwargs and kwargs['louvain_ami']:
         cell_labels = kwargs['cell_labels']
         
         adata = AnnData(X=X_dimred[samp_idx, :])
@@ -431,12 +431,12 @@ def experiment_stats(of, X_dimred, samp_idx, name, **kwargs):
 
         full_labels = label_approx(X_dimred, X_dimred[samp_idx, :], louv_labels)
 
-        nmi = normalized_mutual_info_score(cell_labels, full_labels)
-        bnmi = normalized_mutual_info_score(
+        ami = adjusted_mutual_info_score(cell_labels, full_labels)
+        bami = adjusted_mutual_info_score(
             cell_labels, full_labels, dist='balanced'
         )
-        stats.append(nmi)
-        stats.append(bnmi)
+        stats.append(ami)
+        stats.append(bami)
         stats.append(len(set(louv_labels)))
         
     of.write('\t'.join([ str(stat) for stat in stats ]) + '\n')

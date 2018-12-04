@@ -1,6 +1,8 @@
 from ample import gs, uniform, srs, kmeanspp
 import numpy as np
-from scanorama import find_alignments, assemble
+from scanorama import batch_bias
+from sklearn.neighbors import NearestNeighbors
+from sklearn.preprocessing import normalize
 from subprocess import Popen
 from time import time
 
@@ -14,20 +16,25 @@ def integrate_sketch(datasets_dimred, integration_fn, integration_fn_args={},
     datasets_sketch = [ X[idx] for X, idx in zip(datasets_dimred, sketch_idxs) ]
 
     for _ in range(n_iter):
-        datasets_sketch = integration_fn(datasets_sketch, **integration_fn_args)
+        datasets_int = integration_fn(datasets_sketch[:], **integration_fn_args)
 
-    alignments, matches = find_alignments(datasets_sketch)
+    labels = []
+    curr_label = 0
+    for i, a in enumerate(datasets_sketch):
+        labels += list(np.zeros(a.shape[0]) + curr_label)
+        curr_label += 1
+    labels = np.array(labels, dtype=int)
+
+    neigh = NearestNeighbors(n_neighbors=3).fit(X_dimred)
     
-    for (i, j) in matches.keys():
-        matches_mnn = matches[(i, j)]
-        matches[(i, j)] = [
-            (sketch_idxs[i][a], sketch_idxs[j][b]) for a, b in matches_mnn
-        ]
+    for i, (X_dimred, X_sketch) in enumerate(zip(datasets_dimred, datasets_sketch)):
+        X_int = datasets_int[i]
+        #datasets_int[i] = batch_bias(X_dimred, X_sketch, X_int, batch_size=10000)
+        neigh_graph = neigh.kneighbors_graph(X_sketch)
+        neigh_graph = normalize(neigh_graph, norm='l1', axis=1).T.tocsr()
+        datasets_int[i] = neigh_graph.dot(X_int)
 
-    datasets_dimred = assemble(datasets_dimred,
-                               alignments=alignments, matches=matches)
-
-    return datasets_dimred
+    return datasets_int
 
 def harmony(datasets_dimred):
     mkdir_p('data/harmony')
