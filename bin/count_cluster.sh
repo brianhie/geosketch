@@ -3,5 +3,5 @@ sort -u $1 | \
     do
         printf $name
         printf "\t"
-        grep $name $1 | wc -l
+        cat $1 | awk -v var=$name '$1 == var' | wc -l
     done

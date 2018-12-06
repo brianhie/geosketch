@@ -250,6 +250,9 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
         columns.append('louvain_bami')
         columns.append('louvain_n_clusters')
         
+    if 'sub_labels' in kwargs:
+        columns.append('n_subcluster')
+        
     of = open('target/experiments/{}.txt.2'.format(name), 'a')
     of.write('\t'.join(columns) + '\n')
     
@@ -307,7 +310,7 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
             
                 counts = []
                 
-                for seed in range(n_seeds):
+                for seed in range(10, 10 + n_seeds):
 
                     if sampling_fn_names[s_idx] == 'dropClust':
                         log('Sampling dropClust...')
@@ -438,6 +441,10 @@ def experiment_stats(of, X_dimred, samp_idx, name, **kwargs):
         stats.append(ami)
         stats.append(bami)
         stats.append(len(set(louv_labels)))
+        
+    if 'sub_labels' in kwargs:
+        sub_labels = kwargs['sub_labels']
+        stats.append(len(set(sub_labels[samp_idx])))
         
     of.write('\t'.join([ str(stat) for stat in stats ]) + '\n')
     of.flush()

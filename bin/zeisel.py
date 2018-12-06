@@ -46,34 +46,52 @@ if __name__ == '__main__':
         np.savetxt('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE), X_dimred)
     else:
         X_dimred = np.loadtxt('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE))
-
-    #from anndata import AnnData
-    #import scanpy.api as sc
-    #adata = AnnData(X=X_dimred[samp_idx, :])
-    #sc.pp.neighbors(adata, use_rep='X')
-    #sc.tl.louvain(adata, resolution=1.5, key_added='louvain')
-    #
-    #louv_labels = np.array(adata.obs['louvain'].tolist())
-    #le = LabelEncoder().fit(louv_labels)
-    #cell_labels = le.transform(louv_labels)
-    #
-    #np.savetxt('data/cell_labels/zeisel_louvain.txt', cell_labels)
     
-    labels = (
+    labels = np.array(
         open('data/cell_labels/zeisel_cluster.txt')
         .read().rstrip().split('\n')
     )
     le = LabelEncoder().fit(labels)
     cell_labels = le.transform(labels)
 
+    report_cluster_counts(labels)
+    
+    from differential_entropies import differential_entropies
+    differential_entropies(X_dimred, labels)
+
+    experiment_gs(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        #gene_names=viz_genes, genes=genes,
+        #gene_expr=vstack(datasets),
+        N_only=20000, kmeans=False, visualize_orig=False
+    )
+    experiment_uni(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        #gene_names=viz_genes, genes=genes,
+        #gene_expr=vstack(datasets),
+        N_only=20000, kmeans=False, visualize_orig=False
+    )
+    experiment_srs(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        #gene_names=viz_genes, genes=genes,
+        #gene_expr=vstack(datasets),
+        N_only=20000, kmeans=False, visualize_orig=False
+    )
+    experiment_kmeanspp(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        #gene_names=viz_genes, genes=genes,
+        #gene_expr=vstack(datasets),
+        N_only=20000, kmeans=False, visualize_orig=False
+    )
+    exit()
+    
     experiments(
         X_dimred, NAMESPACE, n_seeds=2,
         cell_labels=cell_labels,
-        louvain_nmi=True, spectral_nmi=True,
+        louvain_ami=True, spectral_nmi=True,
         rare=True,
         rare_label=le.transform(['Ependymal'])[0],
     )
-    exit()
 
     from ample import gs, uniform, srs
     samp_idx = gs(X_dimred, 20000, replace=False)
@@ -108,43 +126,4 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(cell_labels)
     cell_labels = le.transform(cell_labels)
 
-    astro = set([ 32, 38, 40, ])
-    oligo = set([ 2, 5, 12, 20, 23, 33, 37, ])
-    focus = set([ 15, 36, 41 ])
-    
-    labels = []
-    aob_labels = []
-    for cl in cell_labels:
-        if cl in focus:
-            labels.append(0)
-            aob_labels.append('both')
-        elif cl in astro or cl in oligo:
-            labels.append(1)
-            if cl in astro:
-                aob_labels.append('astro')
-            else:
-                aob_labels.append('oligo')
-        else:
-            labels.append(2)
-            aob_labels.append('none')
-    labels = np.array(labels)
-    aob_labels = np.array(aob_labels)
-
-    from mouse_brain_astrocyte import astro_oligo_joint, astro_oligo_violin
-    #astro_oligo_joint(X, genes, 'GJA1', 'MBP', aob_labels, 'astro', NAMESPACE)
-    #astro_oligo_joint(X, genes, 'GJA1', 'MBP', aob_labels, 'oligo', NAMESPACE)
-    #astro_oligo_joint(X, genes, 'GJA1', 'MBP', aob_labels, 'both', NAMESPACE)
-    #astro_oligo_joint(X, genes, 'GJA1', 'PLP1', aob_labels, 'astro', NAMESPACE)
-    #astro_oligo_joint(X, genes, 'GJA1', 'PLP1', aob_labels, 'oligo', NAMESPACE)
-    #astro_oligo_joint(X, genes, 'GJA1', 'PLP1', aob_labels, 'both', NAMESPACE)
-    
-    astro_oligo_violin(X, genes, 'GJA1', aob_labels, NAMESPACE)
-    astro_oligo_violin(X, genes, 'MBP', aob_labels, NAMESPACE)
-    astro_oligo_violin(X, genes, 'PLP1', aob_labels, NAMESPACE)
-    
-    from differential_entropies import differential_entropies
-    differential_entropies(X_dimred, labels)
-
-    visualize_dropout(X, embedding, image_suffix='.png',
-                      viz_prefix=NAMESPACE + '_dropout')
     

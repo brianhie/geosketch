@@ -15,13 +15,6 @@ DIMRED = 100
 
 data_names = [
     'data/pbmc/68k'
-    #'data/pbmc/10x/b_cells',
-    #'data/pbmc/10x/cd14_monocytes',
-    #'data/pbmc/10x/cd4_t_helper',
-    #'data/pbmc/10x/cd56_nk',
-    #'data/pbmc/10x/cytotoxic_t',
-    #'data/pbmc/10x/memory_t',
-    #'data/pbmc/10x/regulatory_t',
 ]
 
 def plot(X, title, labels, bold=None):

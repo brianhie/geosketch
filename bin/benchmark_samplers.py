@@ -11,7 +11,7 @@ if __name__ == '__main__':
     X_dimred = np.loadtxt('data/dimred/svd_zeisel.txt')
     X_dimred = X_dimred[:500000]
     
-    sizes = [ 1000000, 5000000, 10000000 ]
+    sizes = [ 1000000, 2500000, 5000000, 10000000 ]
     times = []
 
     for size in sizes:

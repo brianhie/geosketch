@@ -1,6 +1,8 @@
 from ample import gs, uniform, srs, kmeanspp
 import numpy as np
 from scanorama import batch_bias
+from scipy.sparse import csr_matrix, find
+from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import normalize
 from subprocess import Popen
@@ -9,7 +11,7 @@ from time import time
 from utils import log, mkdir_p
 
 def integrate_sketch(datasets_dimred, integration_fn, integration_fn_args={},
-                     sampling_fn=gs, N=2000, n_iter=1):
+                     sampling_fn=uniform, N=2000, n_iter=1):
 
     sketch_idxs = [ sampling_fn(X, N, replace=False)
                     for X in datasets_dimred ]
@@ -25,14 +27,18 @@ def integrate_sketch(datasets_dimred, integration_fn, integration_fn_args={},
         curr_label += 1
     labels = np.array(labels, dtype=int)
 
-    neigh = NearestNeighbors(n_neighbors=3).fit(X_dimred)
-    
     for i, (X_dimred, X_sketch) in enumerate(zip(datasets_dimred, datasets_sketch)):
-        X_int = datasets_int[i]
-        #datasets_int[i] = batch_bias(X_dimred, X_sketch, X_int, batch_size=10000)
-        neigh_graph = neigh.kneighbors_graph(X_sketch)
-        neigh_graph = normalize(neigh_graph, norm='l1', axis=1).T.tocsr()
-        datasets_int[i] = neigh_graph.dot(X_int)
+        #datasets_int[i] = batch_bias(X_dimred, X_sketch, datasets_int[i], batch_size=10000)
+        
+        neigh = NearestNeighbors(n_neighbors=3).fit(X_sketch)
+        neigh_graph = neigh.kneighbors_graph(X_dimred, mode='distance')
+        idx_i, idx_j, val = find(neigh_graph)
+        neigh_graph = csr_matrix((1. / val, (idx_i, idx_j)))
+        neigh_graph = normalize(neigh_graph, norm='l1', axis=1)
+        
+        #neigh_graph = normalize(rbf_kernel(X_dimred, X_sketch), norm='l1', axis=1)
+                                
+        datasets_int[i] = neigh_graph.dot(datasets_int[i])
 
     return datasets_int
 

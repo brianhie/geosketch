@@ -80,11 +80,15 @@ if __name__ == '__main__':
     X_dimred = X_dimred[qc_idx]
     
     viz_genes = [
-        'Gja1', 'Flt1', 'Gabra6', 'Syt1', 'Gabrb2', 'Gabra1',
-        'Meg3', 'Mbp', 'Rgs5', 'Pcp2', 'Dcn', 'Pvalb', 'Nnat',
-        'C1qb', 'Acta2', 'Syt6', 'Lhx1', 'Sox4', 'Tshz2', 'Cplx3',
-        'Shisa8', 'Fibcd1', 'Drd1', 'Otof', 'Chat', 'Th', 'Rora',
-        'Synpr', 'Cacng4', 'Ttr', 'Gpr37', 'C1ql3', 'Fezf2',
+        'Nptxr', 'Calb1', 'Adora2a', 'Drd1', 'Nefm', 'C1ql2', 'Cck',
+        'Rorb', 'Deptor', 'Gabra6',
+        #'Slc1a3', 'Gad1', 'Gad2', 'Slc17a6', 'Slc17a7', 'Th',
+        #'Pcp2', 'Sln', 'Lgi2'
+        #'Gja1', 'Flt1', 'Gabra6', 'Syt1', 'Gabrb2', 'Gabra1',
+        #'Meg3', 'Mbp', 'Rgs5', 'Pcp2', 'Dcn', 'Pvalb', 'Nnat',
+        #'C1qb', 'Acta2', 'Syt6', 'Lhx1', 'Sox4', 'Tshz2', 'Cplx3',
+        #'Shisa8', 'Fibcd1', 'Drd1', 'Otof', 'Chat', 'Th', 'Rora',
+        #'Synpr', 'Cacng4', 'Ttr', 'Gpr37', 'C1ql3', 'Fezf2',
     ]
 
     labels = np.array(
@@ -95,6 +99,11 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(labels)
     cell_names = sorted(set(labels))
     cell_labels = le.transform(labels)
+
+    report_cluster_counts(labels)
+    
+    from differential_entropies import differential_entropies
+    differential_entropies(X_dimred, labels)
     
     experiments(
         X_dimred, NAMESPACE, n_seeds=2,
@@ -104,6 +113,7 @@ if __name__ == '__main__':
         rare_label=le.transform(['Macrophage'])[0],
     )
     exit()
+
     experiment_gs(
         X_dimred, NAMESPACE, cell_labels=cell_labels,
         #gene_names=viz_genes, genes=genes,
@@ -139,19 +149,4 @@ if __name__ == '__main__':
         samp_idx = gs(X_dimred, N, replace=False)
         save_sketch(X, samp_idx, genes, NAMESPACE + str(N))
     
-
-    from differential_entropies import differential_entropies
-    differential_entropies(X_dimred, labels)
-
-    from ample import gs, uniform, srs
-    samp_idx = srs(X_dimred, 20000, replace=False)
-    report_cluster_counts(cell_labels[samp_idx])
-    samp_idx = gs(X_dimred, 20000, replace=False)
-    report_cluster_counts(cell_labels[samp_idx])
-    embedding = visualize(
-        [ X_dimred[samp_idx, :] ], cell_labels[samp_idx],
-        NAMESPACE + '_geosketch{}'.format(len(samp_idx)),
-        [ str(ct) for ct in sorted(set(cell_labels)) ],
-        perplexity=100, n_iter=500, image_suffix='.png',
-    )
 

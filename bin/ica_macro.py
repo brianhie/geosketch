@@ -4,6 +4,7 @@ import numpy as np
 from scanorama import *
 import scanpy.api as sc
 from scipy.sparse import vstack
+import seaborn as sns
 from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import LabelEncoder, scale
 
@@ -50,6 +51,29 @@ def auroc(X, genes, labels, focus, background=None, cutoff=0.7):
         if auroc >= cutoff:
             print('{}\t{}'.format(gene, auroc))
         
+def violin_jitter(X, genes, gene, labels, focus, background=None,
+                  xlabels=None):
+    gidx = list(genes).index(gene)
+
+    focus_idx = focus == labels
+    if background is None:
+        background_idx = focus != labels
+    else:
+        background_idx = background == labels
+
+    if xlabels is None:
+        xlabels = [ 'Background', 'Focus' ]
+
+    x_gene = X[:, gidx].toarray().flatten()
+    x_focus = x_gene[focus_idx]
+    x_background = x_gene[background_idx]
+    
+    plt.figure()
+    sns.violinplot(data=[ x_focus, x_background ], scale='width', cut=0)
+    sns.stripplot(data=[ x_focus, x_background ], jitter=True, color='black', size=1)
+    plt.xticks([0, 1], xlabels)
+    plt.savefig('{}_violin_{}.svg'.format(NAMESPACE, gene))
+    
 if __name__ == '__main__':
     datasets, genes_list, n_cells = load_names(data_names, norm=False)
 
@@ -59,15 +83,20 @@ if __name__ == '__main__':
 
         X = normalize(dataset)
 
+        gt_idx = [ i for i, s in enumerate(np.sum(X != 0, axis=1))
+                   if s >= 500 ]
+        X = X[gt_idx]
+        
         k = DIMRED
         U, s, Vt = pca(X, k=k)
         X_dimred = U[:, :k] * s[:k]
 
         viz_genes = [
-            'PF4', 'CD74', 'JUNB', 'IER2', 'B2M'
-            #'CD14', 'CD68',
-            #'S100A8', 'S100A9', 'PF4', 'HBB',
-            #'CD4', 'CD19', 'CD34', 'CD56', 'CD8'
+            #'CD74', 'JUNB', 'B2M',
+            'CD14', 'CD68',
+            #'PF4',
+            #'HBB',
+            #'CD19',
         ]
 
         from ample import gs, uniform
@@ -82,19 +111,27 @@ if __name__ == '__main__':
         cell_labels = le.transform(louv_labels)
 
         X_samp = X[samp_idx].tocsc()
+        
+        clusterA = set([ 22 ])
+        clusterB = set([ 0, ])#12, 18 ])
+        
+        labels = []
+        for cl in cell_labels:
+            if cl in clusterA:
+                labels.append(0)
+            elif cl in clusterB:
+                labels.append(1)
+            else:
+                labels.append(2)
+        labels = np.array(labels)
 
-        #clusterA = set([ 22 ])
-        #clusterB = set([ 0, 18 ])
-        #
-        #labels = []
-        #for cl in cell_labels:
-        #    if cl in clusterA:
-        #        labels.append(0)
-        #    elif cl in clusterB:
-        #        labels.append(1)
-        #    else:
-        #        labels.append(2)
-        #
+        xlabels = [ 'Inflammatory macrophage', 'Macrophage' ]
+        violin_jitter(X_samp, genes, 'CD14', labels, 0, 1, xlabels)
+        violin_jitter(X_samp, genes, 'CD68', labels, 0, 1, xlabels)
+        violin_jitter(X_samp, genes, 'CD74', labels, 0, 1, xlabels)
+        violin_jitter(X_samp, genes, 'B2M', labels, 0, 1, xlabels)
+        violin_jitter(X_samp, genes, 'JUNB', labels, 0, 1, xlabels)
+        
         #auroc(X_samp, genes, np.array(labels), 0, background=1)
         #
         #continue
@@ -112,15 +149,6 @@ if __name__ == '__main__':
             perplexity=100, n_iter=500, image_suffix='.png',
             viz_cluster=True
         )
-        #experiment_gs(
-        #    X_dimred, name, cell_labels=cell_labels,
-        #    gene_names=viz_genes, genes=genes, gene_expr=X,
-        #    N_only=20000, kmeans=False, visualize_orig=False
-        #)
-        #experiment_uni(
-        #    X_dimred, name, cell_labels=cell_labels,
-        #    gene_names=viz_genes, genes=genes, gene_expr=X,
-        #    N_only=20000, kmeans=False, visualize_orig=False
-        #)
-    
         
+        #visualize_dropout(X_samp, embedding, image_suffix='.png',
+        #                  viz_prefix=name + '_louvain_dropout')
