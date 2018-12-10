@@ -22,10 +22,10 @@ import warnings
 import numpy as np
 from scipy import sparse as sp
 
-from sklearn.metrics.cluster.expected_mutual_info_fast import expected_mutual_information
+#from sklearn.metrics.cluster.expected_mutual_info_fast import expected_mutual_information
+import expected_mutual_information
 from sklearn.utils.validation import check_array
 from sklearn.utils.fixes import comb
-
 
 def _comb2(n):
     # the exact version is faster for k == 2: use it by default globally in
@@ -765,7 +765,10 @@ def adjusted_mutual_info_score(labels_true, labels_pred,
     mi = mutual_info_score(labels_true, labels_pred,
                            contingency=contingency)
     # Calculate the expected value for the mutual information
-    emi = expected_mutual_information(contingency, n_samples)
+    if dist == 'balanced':
+        emi = expected_mutual_information(contingency, n_samples, 1)
+    else:
+        emi = expected_mutual_information(contingency, n_samples)
     
     # Calculate entropy for each labeling
     if dist == 'balanced':
