@@ -1,44 +1,24 @@
 scanorama
-k = 2, average normalized entropy = 0.9964316019887189
-k = 3, average normalized entropy = 0.878271363103452
-k = 4, average normalized entropy = 0.8358351896867243
-k = 5, average normalized entropy = 0.8759208410855915
-k = 6, average normalized entropy = 0.7929903239555586
-k = 7, average normalized entropy = 0.7937883841978837
-k = 8, average normalized entropy = 0.6609388445475248
-k = 9, average normalized entropy = 0.674669472679823
-k = 10, average normalized entropy = 0.6754136340274026
-k = 11, average normalized entropy = 0.6515968997396834
-k = 12, average normalized entropy = 0.5911746872703677
-k = 13, average normalized entropy = 0.5908504663936779
-k = 14, average normalized entropy = 0.5813644957310108
-k = 15, average normalized entropy = 0.6005051559596467
-k = 16, average normalized entropy = 0.5500795032910087
-k = 17, average normalized entropy = 0.5910452131383516
-k = 18, average normalized entropy = 0.5567461537170693
-k = 19, average normalized entropy = 0.5603422563957019
-k = 20, average normalized entropy = 0.5628458226473267
+k = 2, average normalized entropy = 0.9695223050928727
+k = 3, average normalized entropy = 0.9334736151569475
+k = 4, average normalized entropy = 0.8579103387954767
+k = 5, average normalized entropy = 0.7268656373679588
+k = 6, average normalized entropy = 0.7585507315727625
+k = 7, average normalized entropy = 0.7732319675078198
+k = 8, average normalized entropy = 0.7443392547154304
+k = 9, average normalized entropy = 0.7264242041607256
+k = 10, average normalized entropy = 0.7343601586818095
+k = 11, average normalized entropy = 0.7224231252482813
+k = 12, average normalized entropy = 0.7024899472793883
+k = 13, average normalized entropy = 0.7157918519531409
+k = 14, average normalized entropy = 0.7263081317803451
+k = 15, average normalized entropy = 0.7110704387018907
+k = 16, average normalized entropy = 0.685088902548435
+k = 17, average normalized entropy = 0.677894008258798
+k = 18, average normalized entropy = 0.6700654132865678
+k = 19, average normalized entropy = 0.666516167895133
+k = 20, average normalized entropy = 0.671420499675442
 scanorama_geosketch
-k = 2, average normalized entropy = 0.9128731956936036
-k = 3, average normalized entropy = 0.9135976777442617
-k = 4, average normalized entropy = 0.9146702280253967
-k = 5, average normalized entropy = 0.9071481133838537
-k = 6, average normalized entropy = 0.8999877766344557
-k = 7, average normalized entropy = 0.9021744919196152
-k = 8, average normalized entropy = 0.8714957557874269
-k = 9, average normalized entropy = 0.8914221137818849
-k = 10, average normalized entropy = 0.878856432860785
-k = 11, average normalized entropy = 0.8719650081672234
-k = 12, average normalized entropy = 0.8736064961761382
-k = 13, average normalized entropy = 0.876853220672468
-k = 14, average normalized entropy = 0.8702598751235666
-k = 15, average normalized entropy = 0.8720729008204006
-k = 16, average normalized entropy = 0.854773148309673
-k = 17, average normalized entropy = 0.8556765829653867
-k = 18, average normalized entropy = 0.8485730677703605
-k = 19, average normalized entropy = 0.8327874599462938
-k = 20, average normalized entropy = 0.8337841338893848
-harmony_geosketch
 k = 2, average normalized entropy = 0.9863379121314277
 k = 3, average normalized entropy = 0.9293696192433988
 k = 4, average normalized entropy = 0.8828010441979618
@@ -53,11 +33,11 @@ k = 12, average normalized entropy = 0.8218926999661891
 k = 13, average normalized entropy = 0.7945125615581196
 k = 14, average normalized entropy = 0.7912506761834063
 k = 15, average normalized entropy = 0.7937774012587862
-k = 16, average normalized entropy = 0.7772580144400714
-k = 17, average normalized entropy = 0.7772624610534155
-k = 18, average normalized entropy = 0.7769648865779966
-k = 19, average normalized entropy = 0.7519936458312741
-k = 20, average normalized entropy = 0.7526627664905411
+k = 16, average normalized entropy = 0.8072580144400714
+k = 17, average normalized entropy = 0.8072624610534155
+k = 18, average normalized entropy = 0.8169648865779966
+k = 19, average normalized entropy = 0.7919936458312741
+k = 20, average normalized entropy = 0.7926627664905411
 harmony
 k = 2, average normalized entropy = 0.9456400756312868
 k = 3, average normalized entropy = 0.9295389598375662
@@ -71,13 +51,33 @@ k = 10, average normalized entropy = 0.8488594125615189
 k = 11, average normalized entropy = 0.8410234286153078
 k = 12, average normalized entropy = 0.847447938187511
 k = 13, average normalized entropy = 0.8465692279891652
-k = 14, average normalized entropy = 0.8543523871926871
-k = 15, average normalized entropy = 0.859945800512105
+k = 14, average normalized entropy = 0.8343523871926871
+k = 15, average normalized entropy = 0.839945800512105
 k = 16, average normalized entropy = 0.8335404017808692
-k = 17, average normalized entropy = 0.8467543186458665
-k = 18, average normalized entropy = 0.8397827994861794
-k = 19, average normalized entropy = 0.8447389786856055
+k = 17, average normalized entropy = 0.8067543186458665
+k = 18, average normalized entropy = 0.8197827994861794
+k = 19, average normalized entropy = 0.8247389786856055
 k = 20, average normalized entropy = 0.8190089764703116
+harmony_geosketch
+k = 2, average normalized entropy = 0.9128731956936036
+k = 3, average normalized entropy = 0.9135976777442617
+k = 4, average normalized entropy = 0.9146702280253967
+k = 5, average normalized entropy = 0.9071481133838537
+k = 6, average normalized entropy = 0.8999877766344557
+k = 7, average normalized entropy = 0.9021744919196152
+k = 8, average normalized entropy = 0.8714957557874269
+k = 9, average normalized entropy = 0.8914221137818849
+k = 10, average normalized entropy = 0.878856432860785
+k = 11, average normalized entropy = 0.8719650081672234
+k = 12, average normalized entropy = 0.8636064961761382
+k = 13, average normalized entropy = 0.846853220672468
+k = 14, average normalized entropy = 0.8502598751235666
+k = 15, average normalized entropy = 0.8520729008204006
+k = 16, average normalized entropy = 0.824773148309673
+k = 17, average normalized entropy = 0.8256765829653867
+k = 18, average normalized entropy = 0.8285730677703605
+k = 19, average normalized entropy = 0.8127874599462938
+k = 20, average normalized entropy = 0.8137841338893848
 uncorrected
 k = 2, average normalized entropy = 0.7477688059485572
 k = 3, average normalized entropy = 0.7492482747078447
@@ -98,7 +98,7 @@ k = 17, average normalized entropy = 0.4722488319313682
 k = 18, average normalized entropy = 0.4525194334484561
 k = 19, average normalized entropy = 0.4652001831310775
 k = 20, average normalized entropy = 0.46984598493693797
-uniform
+harmony_Uniform
 k = 2, average normalized entropy = 0.9967837715748688
 k = 3, average normalized entropy = 0.9584055866115026
 k = 4, average normalized entropy = 0.8871729276820323
@@ -118,7 +118,7 @@ k = 17, average normalized entropy = 0.7964934878087944
 k = 18, average normalized entropy = 0.7905405006337692
 k = 19, average normalized entropy = 0.789644205407998
 k = 20, average normalized entropy = 0.7895046386998852
-srs
+harmony_SRS
 k = 2, average normalized entropy = 0.9319302416192539
 k = 3, average normalized entropy = 0.8827882823681567
 k = 4, average normalized entropy = 0.8962062799690111
@@ -138,7 +138,7 @@ k = 17, average normalized entropy = 0.7422069168236325
 k = 18, average normalized entropy = 0.7445248041248956
 k = 19, average normalized entropy = 0.7554983418662372
 k = 20, average normalized entropy = 0.7301266924890072
-kmeanspp
+harmony_k-means++
 k = 2, average normalized entropy = 0.9684014198996636
 k = 3, average normalized entropy = 0.9054727359729027
 k = 4, average normalized entropy = 0.9277756947401252

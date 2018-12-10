@@ -1,6 +1,6 @@
 from ample import gs, uniform, srs, kmeanspp
 import numpy as np
-from scanorama import batch_bias
+from scanorama import transform
 from scipy.sparse import csr_matrix, find
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.neighbors import NearestNeighbors
@@ -11,10 +11,12 @@ from time import time
 from utils import log, mkdir_p
 
 def integrate_sketch(datasets_dimred, integration_fn, integration_fn_args={},
-                     sampling_fn=uniform, N=2000, n_iter=1):
+                     sampling_fn=gs, N=2000, n_iter=1):
 
-    sketch_idxs = [ sampling_fn(X, N, replace=False)
-                    for X in datasets_dimred ]
+    sketch_idxs = [
+        sorted(set(gs(X, N, replace=False)) | set(uniform(X, N, replace=False)))
+        for X in datasets_dimred
+    ]
     datasets_sketch = [ X[idx] for X, idx in zip(datasets_dimred, sketch_idxs) ]
 
     for _ in range(n_iter):
@@ -28,17 +30,20 @@ def integrate_sketch(datasets_dimred, integration_fn, integration_fn_args={},
     labels = np.array(labels, dtype=int)
 
     for i, (X_dimred, X_sketch) in enumerate(zip(datasets_dimred, datasets_sketch)):
-        #datasets_int[i] = batch_bias(X_dimred, X_sketch, datasets_int[i], batch_size=10000)
+        X_int = datasets_int[i]
         
-        neigh = NearestNeighbors(n_neighbors=3).fit(X_sketch)
-        neigh_graph = neigh.kneighbors_graph(X_dimred, mode='distance')
-        idx_i, idx_j, val = find(neigh_graph)
-        neigh_graph = csr_matrix((1. / val, (idx_i, idx_j)))
-        neigh_graph = normalize(neigh_graph, norm='l1', axis=1)
+        neigh = NearestNeighbors(n_neighbors=3).fit(X_dimred)
+        _, neigh_idx = neigh.kneighbors(X_sketch)
+
+        ds_idxs, ref_idxs = [], []
+        for ref_idx in range(neigh_idx.shape[0]):
+            for k_idx in range(neigh_idx.shape[1]):
+                ds_idxs.append(neigh_idx[ref_idx, k_idx])
+                ref_idxs.append(ref_idx)
+
+        bias = transform(X_dimred, X_int, ds_idxs, ref_idxs, 15, batch_size=1000)
         
-        #neigh_graph = normalize(rbf_kernel(X_dimred, X_sketch), norm='l1', axis=1)
-                                
-        datasets_int[i] = neigh_graph.dot(datasets_int[i])
+        datasets_int[i] = X_dimred + bias
 
     return datasets_int
 

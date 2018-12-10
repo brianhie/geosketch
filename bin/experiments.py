@@ -102,7 +102,8 @@ def experiment(sampling_fn, X_dimred, name, cell_labels=None,
                N_only=None, kmeans=True, visualize_orig=True,
                downsample=True, n_downsample=100000,
                gene_names=None, gene_expr=None, genes=None,
-               perplexity=500, kmeans_k=10, sample_type=''):
+               perplexity=500, kmeans_k=10, sample_type='',
+               viz_type='tsne'):
 
     # Assign cells to clusters.
 
@@ -177,12 +178,23 @@ def experiment(sampling_fn, X_dimred, name, cell_labels=None,
         else:
             expr = None
 
-        visualize([ X_dimred[samp_idx, :] ], cell_labels[samp_idx],
-                  name + '_{}{}'.format(sample_type, N), cell_types,
-                  gene_names=gene_names, gene_expr=expr, genes=genes,
-                  #perplexity=5, n_iter=500,
-                  perplexity=max(N/200, 50), n_iter=500,
-                  size=max(int(30000/N), 1), image_suffix='.png')
+        if viz_type == 'umap':
+            adata = AnnData(X=X_dimred[samp_idx, :])
+            sc.pp.neighbors(adata, use_rep='X')
+            sc.tl.umap(adata)
+            embedding = np.array(adata.obsm['X_umap'])
+            visualize(None, cell_labels[samp_idx],
+                      name + '_umap_{}{}'.format(sample_type, N), cell_types,
+                      embedding=embedding,
+                      gene_names=gene_names, gene_expr=expr, genes=genes,
+                      size=max(int(30000/N), 1), image_suffix='.png')
+        else:
+            visualize([ X_dimred[samp_idx, :] ], cell_labels[samp_idx],
+                      name + '_{}{}'.format(sample_type, N), cell_types,
+                      gene_names=gene_names, gene_expr=expr, genes=genes,
+                      #perplexity=5, n_iter=500,
+                      perplexity=max(N/200, 50), n_iter=500,
+                      size=max(int(30000/N), 1), image_suffix='.png')
 
         report_cluster_counts(cell_labels[samp_idx])
 

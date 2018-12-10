@@ -84,33 +84,28 @@ if __name__ == '__main__':
 
     log('Harmony + GeoSketch...')
     harmony_sketch = np.concatenate(integrate_sketch(
-        datasets_dimred[:], harmony, N=2000
+        datasets_dimred[:], harmony,
     ))
-    #harmony_sketch = np.concatenate(
-    #    assemble(datasets_dimred[:], harmony=True, knn=30,
-    #             geosketch=True, geosketch_max=10000)
-    #)
     
-    #log('Scanorama + GeoSketch...')
-    #scanorama_sketch = np.concatenate(integrate_sketch(
-    #    datasets_dimred[:], assemble, integration_fn_args={ 'knn': 30 }, n_iter=12
-    #))
-    #
+    log('Scanorama + GeoSketch...')
+    scanorama_sketch = np.concatenate(integrate_sketch(
+        datasets_dimred[:], assemble, integration_fn_args={ 'knn': 50 },
+    ))
+
     #log('Scanorama (regular)...')
-    #scanorama_full = np.concatenate(assemble(datasets_dimred[:], knn=200,
-    #                                         batch_size=1000))
+    #scanorama_full = np.concatenate(assemble(
+    #    datasets_dimred[:], knn=200, batch_size=1000
+    #))
     
     log('Done integrating.')
     
     idx = np.random.choice(sum([ ds.shape[0] for ds in datasets ]),
                            size=20000, replace=False)
 
-    integrations = [ harmony_sketch, ]
-                     # scanorama_sketch,
+    integrations = [ harmony_sketch,  scanorama_sketch, ]
                      #harmony_full,
                      #scanorama_full ]
-    integration_names = [ 'harmony_sketch', ]
-                          #'scanorama_sketch',
+    integration_names = [ 'harmony_sketch', 'scanorama_sketch', ]
                           #'harmony_full',
                           #'scanorama_full' ]
     

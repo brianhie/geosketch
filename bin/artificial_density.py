@@ -46,7 +46,6 @@ if __name__ == '__main__':
     report_cluster_counts(cell_labels[samp_idx])
     samp_idx = srs_positive(X_dimred, 3000, replace=True)
     report_cluster_counts(cell_labels[samp_idx])
-    exit()
     
     experiments(
         X_dimred, NAMESPACE,

@@ -42,6 +42,15 @@ def plot_stats(stat, samp_fns=None, fname=None, dtype=float,
         samp_fns = parse_stats(fname)
         
     colors = [
+        #'#377eb8', '#ff7f00', '#f781bf',
+        #'#4daf4a', '#ff0000', '#a65628', '#984ea3',
+        #'#999999', '#e41a1c', '#dede00',
+        #'#ffe119', '#e6194b', '#ffbea3',
+        #'#911eb4', '#46f0f0', '#f032e6',
+        #'#d2f53c', '#008080', '#e6beff',
+        #'#aa6e28', '#800000', '#aaffc3',
+        #'#808000', '#ffd8b1', '#000080',
+        #'#808080', '#fabebe', '#a3f4ff'
         '#377eb8', '#ff7f00', '#4daf4a',
         '#984ea3',
         #'#f781bf', '#a65628', '#984ea3',

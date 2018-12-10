@@ -54,6 +54,22 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(labels)
     cell_labels = le.transform(labels)
 
+    visualize(
+        None, cell_labels,
+        NAMESPACE + '_tsne_full',
+        [ str(ct) for ct in sorted(set(cell_labels)) ],
+        embedding=np.loadtxt('data/embedding/embedding_zeisel_tsne.txt'),
+        image_suffix='.png',        
+    )
+    visualize(
+        None, cell_labels,
+        NAMESPACE + '_umap_full',
+        [ str(ct) for ct in sorted(set(cell_labels)) ],
+        embedding=np.loadtxt('data/embedding/embedding_zeisel_umap.txt'),
+        image_suffix='.png',        
+    )
+    exit()
+    
     report_cluster_counts(labels)
     
     from differential_entropies import differential_entropies
@@ -63,25 +79,25 @@ if __name__ == '__main__':
         X_dimred, NAMESPACE, cell_labels=cell_labels,
         #gene_names=viz_genes, genes=genes,
         #gene_expr=vstack(datasets),
-        N_only=20000, kmeans=False, visualize_orig=False
+        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
     )
     experiment_uni(
         X_dimred, NAMESPACE, cell_labels=cell_labels,
         #gene_names=viz_genes, genes=genes,
         #gene_expr=vstack(datasets),
-        N_only=20000, kmeans=False, visualize_orig=False
+        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
     )
     experiment_srs(
         X_dimred, NAMESPACE, cell_labels=cell_labels,
         #gene_names=viz_genes, genes=genes,
         #gene_expr=vstack(datasets),
-        N_only=20000, kmeans=False, visualize_orig=False
+        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
     )
     experiment_kmeanspp(
         X_dimred, NAMESPACE, cell_labels=cell_labels,
         #gene_names=viz_genes, genes=genes,
         #gene_expr=vstack(datasets),
-        N_only=20000, kmeans=False, visualize_orig=False
+        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
     )
     exit()
     

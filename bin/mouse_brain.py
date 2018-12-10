@@ -100,6 +100,32 @@ if __name__ == '__main__':
     cell_names = sorted(set(labels))
     cell_labels = le.transform(labels)
 
+    experiment_gs(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        #gene_names=viz_genes, genes=genes,
+        #gene_expr=vstack(datasets),
+        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
+    )
+    experiment_uni(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        #gene_names=viz_genes, genes=genes,
+        #gene_expr=vstack(datasets),
+        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
+    )
+    experiment_srs(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        #gene_names=viz_genes, genes=genes,
+        #gene_expr=vstack(datasets),
+        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
+    )
+    experiment_kmeanspp(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        #gene_names=viz_genes, genes=genes,
+        #gene_expr=vstack(datasets),
+        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
+    )
+    exit()
+    
     report_cluster_counts(labels)
     
     from differential_entropies import differential_entropies
@@ -114,32 +140,6 @@ if __name__ == '__main__':
     )
     exit()
 
-    experiment_gs(
-        X_dimred, NAMESPACE, cell_labels=cell_labels,
-        #gene_names=viz_genes, genes=genes,
-        #gene_expr=vstack(datasets),
-        N_only=20000, kmeans=False, visualize_orig=False
-    )
-    experiment_uni(
-        X_dimred, NAMESPACE, cell_labels=cell_labels,
-        #gene_names=viz_genes, genes=genes,
-        #gene_expr=vstack(datasets),
-        N_only=20000, kmeans=False, visualize_orig=False
-    )
-    experiment_srs(
-        X_dimred, NAMESPACE, cell_labels=cell_labels,
-        #gene_names=viz_genes, genes=genes,
-        #gene_expr=vstack(datasets),
-        N_only=20000, kmeans=False, visualize_orig=False
-    )
-    experiment_kmeanspp(
-        X_dimred, NAMESPACE, cell_labels=cell_labels,
-        #gene_names=viz_genes, genes=genes,
-        #gene_expr=vstack(datasets),
-        N_only=20000, kmeans=False, visualize_orig=False
-    )
-    exit()
-    
     from ample import gs
     samp_idx = gs(X_dimred, 1000, replace=False)
     save_sketch(X, samp_idx, genes, NAMESPACE + '1000')

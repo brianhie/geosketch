@@ -12,7 +12,7 @@ from utils import *
 
 NAMESPACE = 'artificial_volume'
 METHOD = 'svd'
-DIMRED = 100
+DIMRED = 3
 
 data_names = [ 'data/293t_jurkat/293t' ]
 
@@ -30,26 +30,26 @@ if __name__ == '__main__':
     translate = X_dimred.max(0)
     for i in range(3):
         X_shrink = X_dimred
-        X_shrink = (X_shrink / (10. ** i))
+        X_shrink[:, 0] = (X_shrink[:, 0] / (10 ** i))
         Xs.append(X_shrink + (translate * 2 * i))
         labels += list(np.zeros(X_dimred.shape[0]) + i)
         
     X_dimred = np.concatenate(Xs)
     cell_labels = np.array(labels, dtype=int)
 
-    expected = np.array([ 1, 1/10., 1/100.])
+    expected = np.array([ 1., 1. / 10, 1. / 100])
     expected = np.array(expected) / sum(expected)
+
+    print(expected)
         
     from ample import gs, gs_gap, srs, uniform
     samp_idx = gs_gap(X_dimred, 3000, replace=True)
-    report_cluster_counts(cell_labels[samp_idx])
+    report_cluster_counts(cell_labels[samp_idx]); print('')
     samp_idx = srs(X_dimred, 3000, replace=True)
-    report_cluster_counts(cell_labels[samp_idx])
+    report_cluster_counts(cell_labels[samp_idx]); print('')
     samp_idx = uniform(X_dimred, 3000, replace=True)
     report_cluster_counts(cell_labels[samp_idx])
-
     exit()
-    
     experiments(
         X_dimred, NAMESPACE,
         cell_labels=cell_labels,
