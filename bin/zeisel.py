@@ -54,6 +54,15 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(labels)
     cell_labels = le.transform(labels)
 
+    experiments(
+        X_dimred, NAMESPACE, n_seeds=4,
+        cell_labels=cell_labels,
+        louvain_ami=True, spectral_nmi=True,
+        rare=True,
+        rare_label=le.transform(['Ependymal'])[0],
+    )
+    exit()
+
     visualize(
         None, cell_labels,
         NAMESPACE + '_tsne_full',
@@ -68,7 +77,6 @@ if __name__ == '__main__':
         embedding=np.loadtxt('data/embedding/embedding_zeisel_umap.txt'),
         image_suffix='.png',        
     )
-    exit()
     
     report_cluster_counts(labels)
     
@@ -99,16 +107,7 @@ if __name__ == '__main__':
         #gene_expr=vstack(datasets),
         viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
     )
-    exit()
     
-    experiments(
-        X_dimred, NAMESPACE, n_seeds=2,
-        cell_labels=cell_labels,
-        louvain_ami=True, spectral_nmi=True,
-        rare=True,
-        rare_label=le.transform(['Ependymal'])[0],
-    )
-
     from ample import gs, uniform, srs
     samp_idx = gs(X_dimred, 20000, replace=False)
     #samp_idx = uniform(X_dimred, 20000, replace=False)

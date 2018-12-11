@@ -265,7 +265,7 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
     if 'sub_labels' in kwargs:
         columns.append('n_subcluster')
         
-    of = open('target/experiments/{}.txt.2'.format(name), 'a')
+    of = open('target/experiments/{}.txt.4'.format(name), 'a')
     of.write('\t'.join(columns) + '\n')
     
     Ns = []
