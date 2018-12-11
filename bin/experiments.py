@@ -264,6 +264,8 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
         
     if 'sub_labels' in kwargs:
         columns.append('n_subcluster')
+
+    mkdir_p('target/experiments')
         
     of = open('target/experiments/{}.txt.4'.format(name), 'a')
     of.write('\t'.join(columns) + '\n')
