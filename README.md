@@ -34,7 +34,6 @@ N = 20000 # Number of samples to obtain from the data set.
 sketch_index = gs(X_dimred, N, replace=False)
 
 X_sketch = X_dimred[sketch_index]
-
 ```
 
 ## Examples
@@ -46,7 +45,6 @@ All of the data used in our study can be downloaded from http://geosketch.csail.
 ```
 wget http://geosketch.csail.mit.edu/data.tar.gz
 tar xvf data.tar.gz
-
 ```
 
 ### Visualizing sketches of a mouse brain data set
