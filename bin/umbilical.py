@@ -99,7 +99,7 @@ if __name__ == '__main__':
             #'CD19',
         ]
 
-        from ample import gs, uniform
+        from geosketch import gs, uniform
         samp_idx = gs(X_dimred, 20000, replace=False)
 
         adata = AnnData(X=X_dimred[samp_idx, :])

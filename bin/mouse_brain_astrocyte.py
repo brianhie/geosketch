@@ -88,7 +88,7 @@ if __name__ == '__main__':
     else:
         X_dimred = np.loadtxt('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE))
         
-    from ample import gs, uniform
+    from geosketch import gs, uniform
     samp_idx = gs(X_dimred, 20000, replace=False)
     #samp_idx = uniform(X_dimred, 20000, replace=False)
     

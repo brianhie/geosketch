@@ -30,7 +30,7 @@ if __name__ == '__main__':
     else:
         X_dimred = np.loadtxt('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE))
 
-    from ample import gs
+    from geosketch import gs
 
     idx1k = gs(X_dimred, 1000, replace=False)
     np.savetxt('data/monkey/sketch_idx_1000.txt', np.array(idx1k), fmt='%d')

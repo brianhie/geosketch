@@ -18,7 +18,7 @@ from process import load_names
 from save_mtx import save_mtx
 from supervised import adjusted_mutual_info_score
 from supervised import normalized_mutual_info_score
-from ample import *
+from geosketch import *
 from utils import *
 
 # Clustering-based downsampling efficiency.
@@ -82,7 +82,7 @@ def experiment_kmeanspp(X_dimred, name, **kwargs):
     experiment(kmeanspp, X_dimred, name, **kwargs)
     
 def experiment_srs(X_dimred, name, **kwargs):
-    #from ample import srs
+    #from geosketch import srs
     kwargs['sample_type'] = 'srs'
     experiment(srs, X_dimred, name, **kwargs)
 

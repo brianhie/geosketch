@@ -99,7 +99,7 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(labels)
     cell_labels = le.transform(labels)
     
-    from ample import gs, uniform, srs, kmeanspp
+    from geosketch import gs, uniform, srs, kmeanspp
     
     samp_fns = [ gs, uniform, srs, kmeanspp ]
     samp_names = [ 'gs', 'uni', 'srs', 'kmeanspp' ]

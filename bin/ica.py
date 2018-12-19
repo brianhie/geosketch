@@ -184,7 +184,7 @@ if __name__ == '__main__':
     else:
         X_dimred = np.loadtxt('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE))
 
-    from ample import gs
+    from geosketch import gs
     samp_idx = gs(X_dimred, 1000, replace=False)
     save_sketch(X, samp_idx, genes, NAMESPACE + '1000')
     

@@ -3,7 +3,7 @@ from scanorama import plt
 from scipy.sparse import csr_matrix
 from time import time
 
-from ample import *
+from geosketch import *
 from utils import log
 
 if __name__ == '__main__':

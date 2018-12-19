@@ -1,4 +1,4 @@
-from ample import gs, uniform, srs, kmeanspp
+from geosketch import gs, uniform, srs, kmeanspp
 import numpy as np
 from scanorama import transform
 from scipy.sparse import csr_matrix, find

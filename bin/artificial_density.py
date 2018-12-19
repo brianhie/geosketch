@@ -39,7 +39,7 @@ if __name__ == '__main__':
     X_dimred = np.concatenate(Xs)
     cell_labels = np.array(labels, dtype=int)
 
-    from ample import gs, gs_gap, srs, srs_positive
+    from geosketch import gs, gs_gap, srs, srs_positive
     samp_idx = gs_gap(X_dimred, 3000, replace=True)
     report_cluster_counts(cell_labels[samp_idx])
     samp_idx = srs(X_dimred, 3000, replace=True)

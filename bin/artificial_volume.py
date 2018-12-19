@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     print(expected)
         
-    from ample import gs, gs_gap, srs, uniform
+    from geosketch import gs, gs_gap, srs, uniform
     samp_idx = gs_gap(X_dimred, 3000, replace=True)
     report_cluster_counts(cell_labels[samp_idx]); print('')
     samp_idx = srs(X_dimred, 3000, replace=True)

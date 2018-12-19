@@ -5,7 +5,7 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import normalize, LabelEncoder
 
 from process import load_names
-from ample import srs, reduce_dimensionality, test
+from geosketch import srs, reduce_dimensionality, test
 from utils import log
 
 NAMESPACE = 'pancreas'

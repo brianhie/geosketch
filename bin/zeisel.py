@@ -108,7 +108,7 @@ if __name__ == '__main__':
         viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
     )
     
-    from ample import gs, uniform, srs
+    from geosketch import gs, uniform, srs
     samp_idx = gs(X_dimred, 20000, replace=False)
     #samp_idx = uniform(X_dimred, 20000, replace=False)
     #samp_idx = srs(X_dimred, 20000, replace=False)
