@@ -278,6 +278,8 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
         Ns = Ns / 2.
     Ns = [ int(N) for N in Ns ]
 
+    #Ns = [ 1000, 2000, 3000, 4000 ]
+
     sampling_fns = [
         uniform,
         gs_grid,
@@ -311,7 +313,7 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
         if sampling_fn_names[s_idx] == 'dropClust':
             dropclust_preprocess(X_dimred, name)
 
-        for replace in [ True, False ]:
+        for replace in [ False ]:#[ True, False ]:
             if replace and sampling_fn_names[s_idx] in not_replace:
                 continue
 

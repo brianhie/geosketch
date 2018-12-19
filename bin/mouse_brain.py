@@ -65,6 +65,7 @@ if __name__ == '__main__':
     qc_idx = keep_valid(datasets)
     datasets, genes = merge_datasets(datasets, genes_list)
     X = vstack(datasets)
+    X = X[qc_idx]
 
     if not os.path.isfile('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE)):
         log('Dimension reduction with {}...'.format(METHOD))
@@ -76,8 +77,7 @@ if __name__ == '__main__':
     else:
         X_dimred = np.loadtxt('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE))
         
-    X = X[qc_idx]
-    X_dimred = X_dimred[qc_idx]
+    #X_dimred = X_dimred[qc_idx]
     
     viz_genes = [
         'Nptxr', 'Calb1', 'Adora2a', 'Drd1', 'Nefm', 'C1ql2', 'Cck',
@@ -99,6 +99,15 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(labels)
     cell_names = sorted(set(labels))
     cell_labels = le.transform(labels)
+
+    experiments(
+        X_dimred, NAMESPACE, n_seeds=3,
+        cell_labels=cell_labels,
+        louvain_ami=True, spectral_nmi=True,
+        #rare=True,
+        #rare_label=le.transform(['Macrophage'])[0],
+    )
+    exit()
 
     experiment_gs(
         X_dimred, NAMESPACE, cell_labels=cell_labels,
@@ -131,15 +140,6 @@ if __name__ == '__main__':
     from differential_entropies import differential_entropies
     differential_entropies(X_dimred, labels)
     
-    experiments(
-        X_dimred, NAMESPACE, n_seeds=2,
-        cell_labels=cell_labels,
-        louvain_ami=True, spectral_nmi=True, kmeans_nmi=True,
-        rare=True,
-        rare_label=le.transform(['Macrophage'])[0],
-    )
-    exit()
-
     from ample import gs
     samp_idx = gs(X_dimred, 1000, replace=False)
     save_sketch(X, samp_idx, genes, NAMESPACE + '1000')

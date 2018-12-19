@@ -61,9 +61,9 @@ if __name__ == '__main__':
     experiments(
         X_dimred, NAMESPACE,
         cell_labels=cell_labels,
-        kmeans_nmi=True, spectral_nmi=True, louvain_ami=True,
+        spectral_nmi=True, louvain_ami=True,
         rare=True,
-        rare_label=le.transform(['3'])[0],
+        rare_label=le.transform(['Dendritic'])[0],
         #entropy=True,
         #max_min_dist=True
     )
