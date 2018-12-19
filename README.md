@@ -57,6 +57,10 @@ python bin/mouse_brain_visualize.py
 ```
 This will output PNG files to the top level directory visualizing different sketches produced by different algorithms, including geometric sketching.
 
+## Algorithm implementation
+
+For those interested, the algorithm implementation is available in the file [`geosketch/sketch.py`](geosketch/sketch.py).
+
 ## Questions
 
 For questions about the pipeline and code, contact brianhie@mit.edu and hhcho@mit.edu. We will do our best to provide support, address any issues, and keep improving this software. And do not hesitate to submit a pull request and contribute!
