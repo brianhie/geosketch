@@ -2,10 +2,10 @@ from setuptools import setup, find_packages
 
 setup(
     name='geosketch',
-    version='0.1',
+    version='0.1.1',
     description='Geometry-preserving random sampling',
     url='https://github.com/brianhie/geosketch',
-    download_url='https://github.com/brianhie/geosketch/archive/v0.1-alpha.tar.gz',
+    download_url='https://github.com/brianhie/geosketch/archive/v0.1.1-alpha.tar.gz',
     packages=find_packages(exclude=['bin', 'conf', 'data', 'target', 'R']),
     install_requires=[
         'fbpca>=1.0',
