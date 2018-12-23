@@ -66,7 +66,7 @@ def kmeanspp(X, n_clusters, seed=None, replace=False,
             centers[c] = X[best_candidate].toarray()
         else:
             centers[c] = X[best_candidate]
-        centers_idx.append(c)
+        centers_idx.append(best_candidate)
         current_pot = best_pot
         closest_dist_sq = best_dist_sq
 

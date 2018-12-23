@@ -44,6 +44,7 @@ if __name__ == '__main__':
         spectral_nmi=True, louvain_ami=True,
         rare=True,
         rare_label=le.transform(['293t'])[0],
+        #max_min_dist=True,
     )
     exit()
 

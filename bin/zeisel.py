@@ -55,11 +55,12 @@ if __name__ == '__main__':
     cell_labels = le.transform(labels)
 
     experiments(
-        X_dimred, NAMESPACE, n_seeds=4,
+        X_dimred, NAMESPACE, n_seeds=5,
         cell_labels=cell_labels,
         louvain_ami=True, spectral_nmi=True,
         rare=True,
         rare_label=le.transform(['Ependymal'])[0],
+        #max_min_dist=True,
     )
     exit()
 

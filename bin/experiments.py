@@ -214,8 +214,20 @@ def normalized_entropy(counts):
 def err_exit(param_name):
     sys.stderr.write('Needs `{}\' param.\n'.format(param_name))
     exit(1)
+
+def load_cached_idx(name, dirname, N, seed):
+    cache_fname = 'data/cache/{}/{}_{}_{}.txt'.format(dirname, name, N, seed)
+    if os.path.isfile(cache_fname):
+        with open(cache_fname, 'r') as f:
+            return [ int(x) for x in f.read().rstrip().split() ]
     
-def experiments(X_dimred, name, n_seeds=10, **kwargs):
+def save_cached_idx(samp_idx, name, dirname, N, seed):
+    cache_fname = 'data/cache/{}/{}_{}_{}.txt'.format(dirname, name, N, seed)
+    with open(cache_fname, 'w') as of:
+        for si in samp_idx:
+            of.write(str(int(si)) + '\n')
+        
+def experiments(X_dimred, name, n_seeds=10, use_cache=True, **kwargs):
 
     columns = [
         'name', 'sampling_fn', 'replace', 'N', 'seed', 'time'
@@ -264,6 +276,9 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
         
     if 'sub_labels' in kwargs:
         columns.append('n_subcluster')
+
+    if use_cache:
+        mkdir_p('data/cache/{}'.format(name))
 
     mkdir_p('target/experiments')
         
@@ -343,11 +358,27 @@ def experiments(X_dimred, name, n_seeds=10, **kwargs):
                         log('Sampling gs_gap_N done.')
                     else:
                         log('Sampling {}...'.format(sampling_fn_names[s_idx]))
-                        t0 = time()
-                        samp_idx = sampling_fn(X_dimred, N, seed=seed,
-                                               replace=replace)
-                        t1 = time()
-                        log('Sampling {} done.'.format(sampling_fn_names[s_idx]))
+
+                        if use_cache:
+                            samp_idx = load_cached_idx(sampling_fn_names[s_idx],
+                                                       name, N, seed)
+                        else:
+                            samp_idx = None
+
+                        if samp_idx is None:
+                        
+                            t0 = time()
+                            samp_idx = sampling_fn(X_dimred, N, seed=seed,
+                                                   replace=replace)
+                            t1 = time()
+                            log('Sampling {} done.'.format(sampling_fn_names[s_idx]))
+
+                            if use_cache:
+                                save_cached_idx(samp_idx, sampling_fn_names[s_idx],
+                                                name, N, seed)
+
+                        else:
+                            t1 = t0 = 0
 
                     kwargs['sampling_fn'] = sampling_fn_names[s_idx]
                     kwargs['replace'] = replace
@@ -400,10 +431,15 @@ def experiment_stats(of, X_dimred, samp_idx, name, **kwargs):
         stats.append(scipy.stats.entropy(expected, cluster_hist))
 
     if 'max_min_dist' in kwargs and kwargs['max_min_dist']:
-        dist = pairwise_distances(
-            X_dimred[samp_idx, :], X_dimred, n_jobs=-1
-        )
-        stats.append(dist.min(0).max())
+        min_dist = []
+        batch_size = 50000
+        for batch in range(0, X_dimred.shape[0], batch_size):
+            dist = pairwise_distances(
+                X_dimred[samp_idx, :], X_dimred[batch:batch + batch_size],
+                n_jobs=-1
+            )
+            min_dist += list(dist.min(0))
+        stats.append(max(min_dist))
 
     if 'kmeans_nmi' in kwargs and kwargs['kmeans_nmi']:
         cell_labels = kwargs['cell_labels']

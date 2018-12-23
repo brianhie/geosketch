@@ -58,37 +58,37 @@ if __name__ == '__main__':
     cell_names = sorted(set(labels))
     cell_labels = le.transform(labels)
 
-    experiment_gs(
-        X_dimred, NAMESPACE, cell_labels=cell_labels,
-        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
-    )
-    experiment_uni(
-        X_dimred, NAMESPACE, cell_labels=cell_labels,
-        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
-    )
-    experiment_srs(
-        X_dimred, NAMESPACE, cell_labels=cell_labels,
-        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
-    )
-    experiment_kmeanspp(
-        X_dimred, NAMESPACE, cell_labels=cell_labels,
-        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
-    )
-
-    experiment_gs(
-        X_dimred, NAMESPACE, cell_labels=cell_labels,
-        viz_type='tsne', N_only=20000, kmeans=False, visualize_orig=False
-    )
-    experiment_uni(
-        X_dimred, NAMESPACE, cell_labels=cell_labels,
-        viz_type='tsne', N_only=20000, kmeans=False, visualize_orig=False
-    )
-    experiment_srs(
-        X_dimred, NAMESPACE, cell_labels=cell_labels,
-        viz_type='tsne', N_only=20000, kmeans=False, visualize_orig=False
-    )
+    #experiment_gs(
+    #    X_dimred, NAMESPACE, cell_labels=cell_labels,
+    #    viz_type='tsne', N_only=20000, kmeans=False, visualize_orig=False
+    #)
+    #experiment_uni(
+    #    X_dimred, NAMESPACE, cell_labels=cell_labels,
+    #    viz_type='tsne', N_only=20000, kmeans=False, visualize_orig=False
+    #)
+    #experiment_srs(
+    #    X_dimred, NAMESPACE, cell_labels=cell_labels,
+    #    viz_type='tsne', N_only=20000, kmeans=False, visualize_orig=False
+    #)
     experiment_kmeanspp(
         X_dimred, NAMESPACE, cell_labels=cell_labels,
         viz_type='tsne', N_only=20000, kmeans=False, visualize_orig=False
     )
     
+    #experiment_gs(
+    #    X_dimred, NAMESPACE, cell_labels=cell_labels,
+    #    viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
+    #)
+    #experiment_uni(
+    #    X_dimred, NAMESPACE, cell_labels=cell_labels,
+    #    viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
+    #)
+    #experiment_srs(
+    #    X_dimred, NAMESPACE, cell_labels=cell_labels,
+    #    viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
+    #)
+    experiment_kmeanspp(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
+    )
+

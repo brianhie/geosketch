@@ -64,7 +64,6 @@ if __name__ == '__main__':
         spectral_nmi=True, louvain_ami=True,
         rare=True,
         rare_label=le.transform(['Dendritic'])[0],
-        #entropy=True,
         #max_min_dist=True
     )
     exit()
