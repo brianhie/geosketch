@@ -12,7 +12,7 @@ from utils import *
 
 NAMESPACE = 'artificial_volume'
 METHOD = 'svd'
-DIMRED = 3
+DIMRED = 100
 
 data_names = [ 'data/293t_jurkat/293t' ]
 
@@ -29,8 +29,8 @@ if __name__ == '__main__':
     labels = []
     translate = X_dimred.max(0)
     for i in range(3):
-        X_shrink = X_dimred
-        X_shrink[:, 0] = (X_shrink[:, 0] / (10 ** i))
+        X_shrink = X_dimred  / (10 ** i)
+        #X_shrink[:, 0] = (X_shrink[:, 0] / (10 ** i))
         Xs.append(X_shrink + (translate * 2 * i))
         labels += list(np.zeros(X_dimred.shape[0]) + i)
         
@@ -49,12 +49,12 @@ if __name__ == '__main__':
     report_cluster_counts(cell_labels[samp_idx]); print('')
     samp_idx = uniform(X_dimred, 3000, replace=True)
     report_cluster_counts(cell_labels[samp_idx])
-    exit()
+
     experiments(
         X_dimred, NAMESPACE,
         cell_labels=cell_labels,
         #rare=True, rare_label=2,
         #entropy=True,
-        kl_divergence=True, expected=expected,
+        expected=expected, kl_divergence=True,
         #max_min_dist=True
     )

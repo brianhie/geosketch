@@ -49,8 +49,9 @@ if __name__ == '__main__':
     
     experiments(
         X_dimred, NAMESPACE,
-        rare=True, cell_labels=cell_labels, rare_label=2,
-        entropy=True,
-        kl_divergence=True, expected=np.array([ 1./3, 1./3, 1./3]),
-        max_min_dist=True
+        cell_labels=cell_labels,
+        #rare=True, cell_labels=cell_labels, rare_label=2,
+        #entropy=True,
+        expected=np.array([ 1./3, 1./3, 1./3]), kl_divergence=True,
+        #max_min_dist=True
     )

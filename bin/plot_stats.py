@@ -120,6 +120,7 @@ def plot_stats(stat, samp_fns=None, fname=None, dtype=float,
     
 if __name__ == '__main__':
     only_fns = set([
+        'gs_gap_k',
         'uniform',
         #'gs_grid',
         'gs_gap',

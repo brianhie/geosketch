@@ -183,6 +183,8 @@ def experiment(sampling_fn, X_dimred, name, cell_labels=None,
             sc.pp.neighbors(adata, use_rep='X')
             sc.tl.umap(adata)
             embedding = np.array(adata.obsm['X_umap'])
+            embedding[embedding < -20] = -20
+            embedding[embedding > 20] = 20
             visualize(None, cell_labels[samp_idx],
                       name + '_umap_{}{}'.format(sample_type, N), cell_types,
                       embedding=embedding,
@@ -282,25 +284,29 @@ def experiments(X_dimred, name, n_seeds=10, use_cache=True, **kwargs):
 
     mkdir_p('target/experiments')
         
-    of = open('target/experiments/{}.txt.4'.format(name), 'a')
+    of = open('target/experiments/{}.txt.7'.format(name), 'a')
     of.write('\t'.join(columns) + '\n')
-    
-    Ns = []
-    for scale in [ 0.02, 0.04, 0.06, 0.08, 0.1 ]:
-        Ns.append(int(scale * X_dimred.shape[0]))
-    Ns = np.array(Ns)
-    while max(Ns) > 20000:
-        Ns = Ns / 2.
-    Ns = [ int(N) for N in Ns ]
+
+    if 'Ns' in kwargs and kwargs['Ns'] is not None:
+        Ns = kwargs['Ns']
+    else:
+        Ns = []
+        for scale in [ 0.02, 0.04, 0.06, 0.08, 0.1 ]:
+            Ns.append(int(scale * X_dimred.shape[0]))
+        Ns = np.array(Ns)
+        while max(Ns) > 30000:
+            Ns = Ns / 2.
+        Ns = [ int(N) for N in Ns ]
 
     #Ns = [ 1000, 2000, 3000, 4000 ]
 
     sampling_fns = [
         uniform,
-        gs_grid,
+        gs_gap,
         gs_gap,
         kmeanspp,
         srs,
+        gs_grid,
         louvain1,
         louvain3,
         kmeans,
@@ -309,10 +315,11 @@ def experiments(X_dimred, name, n_seeds=10, use_cache=True, **kwargs):
     
     sampling_fn_names = [
         'uniform',
-        'gs_grid',
         'gs_gap',
+        'gs_gap_N',
         'kmeans++',
         'srs',
+        'gs_grid',
         'louvain1',
         'louvain3',
         'kmeans',
@@ -356,6 +363,13 @@ def experiments(X_dimred, name, n_seeds=10, use_cache=True, **kwargs):
                                                replace=replace)
                         t1 = time()
                         log('Sampling gs_gap_N done.')
+                    elif sampling_fn_names[s_idx] == 'gs_gap_k':
+                        log('Sampling gs_gap_k...')
+                        t0 = time()
+                        samp_idx = sampling_fn(X_dimred, 20000, k=N, seed=seed,
+                                               replace=replace)
+                        t1 = time()
+                        log('Sampling gs_gap_k done.')
                     else:
                         log('Sampling {}...'.format(sampling_fn_names[s_idx]))
 
@@ -428,17 +442,18 @@ def experiment_stats(of, X_dimred, samp_idx, name, **kwargs):
             if c in clusters:
                 cluster_hist[c] = np.sum(cluster_labels == c)
         cluster_hist /= np.sum(cluster_hist)
-        stats.append(scipy.stats.entropy(expected, cluster_hist))
+        stats.append(scipy.stats.entropy(cluster_hist, expected))
 
     if 'max_min_dist' in kwargs and kwargs['max_min_dist']:
         min_dist = []
-        batch_size = 50000
+        batch_size = 20000
         for batch in range(0, X_dimred.shape[0], batch_size):
             dist = pairwise_distances(
                 X_dimred[samp_idx, :], X_dimred[batch:batch + batch_size],
                 n_jobs=-1
             )
             min_dist += list(dist.min(0))
+            del dist
         stats.append(max(min_dist))
 
     if 'kmeans_nmi' in kwargs and kwargs['kmeans_nmi']:
@@ -461,7 +476,7 @@ def experiment_stats(of, X_dimred, samp_idx, name, **kwargs):
         cell_labels = kwargs['cell_labels']
         
         k = len(set(cell_labels))
-        spect = SpectralClustering(n_clusters=k*2, n_init=1,
+        spect = SpectralClustering(n_clusters=k*2,
                                    assign_labels='discretize',
                                    random_state=kwargs['seed'], n_jobs=-1)
         spect.fit(X_dimred[samp_idx, :])

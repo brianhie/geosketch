@@ -54,13 +54,18 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(labels)
     cell_labels = le.transform(labels)
 
+    n_samples = X.shape[0]
+    ks = [ 10, 50, 200, 500, int(np.sqrt(n_samples)), 1000, 5000, 10000,
+           15000, 50000, 100000, 200000, n_samples ]
+    
     experiments(
         X_dimred, NAMESPACE, n_seeds=5,
         cell_labels=cell_labels,
-        louvain_ami=True, spectral_nmi=True,
+        louvain_ami=True,
+        spectral_nmi=True,
         rare=True,
         rare_label=le.transform(['Ependymal'])[0],
-        #max_min_dist=True,
+        max_min_dist=True,
     )
     exit()
 
