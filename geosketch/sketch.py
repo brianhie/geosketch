@@ -108,12 +108,15 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
     if verbose:
         log('Found {} grid cells'.format(len(grid)))
 
+    valid_grids = set()
     gs_idx = []
     for n in range(N):
-        grid_cells = list(grid.keys())
-        grid_cell = grid_cells[np.random.choice(len(grid_cells))]
-        samples = list(grid[grid_cell])
-        sample = samples[np.random.choice(len(samples))]
+        if len(valid_grids) == 0:
+            valid_grids = set(grid.keys())
+        valid_grids_list = list(valid_grids)
+        grid_cell = valid_grids_list[np.random.choice(len(valid_grids))]
+        valid_grids.remove(grid_cell)
+        sample = np.random.choice(list(grid[grid_cell]))
         if not replace:
             grid[grid_cell].remove(sample)
             if len(grid[grid_cell]) == 0:
@@ -210,12 +213,15 @@ def gs_grid(X, N, k='auto', seed=None, replace=False,
     if verbose:
         log('Found {} grid cells'.format(len(grid)))
                 
+    valid_grids = set()
     gs_idx = []
     for n in range(N):
-        grid_cells = list(grid.keys())
-        grid_cell = grid_cells[np.random.choice(len(grid_cells))]
-        samples = list(grid[grid_cell])
-        sample = samples[np.random.choice(len(samples))]
+        if len(valid_grids) == 0:
+            valid_grids = set(grid.keys())
+        valid_grids_list = list(valid_grids)
+        grid_cell = valid_grids_list[np.random.choice(len(valid_grids))]
+        valid_grids.remove(grid_cell)
+        sample = np.random.choice(list(grid[grid_cell]))
         if not replace:
             grid[grid_cell].remove(sample)
             if len(grid[grid_cell]) == 0:

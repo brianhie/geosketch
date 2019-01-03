@@ -55,11 +55,21 @@ if __name__ == '__main__':
     cell_labels = le.transform(labels)
 
     n_samples = X.shape[0]
-    ks = [ 10, 50, 200, 500, int(np.sqrt(n_samples)), 1000, 5000, 10000,
-           15000, 50000, 100000, 200000, n_samples ]
+    ks = sorted([ 10, 200, 500, int(np.sqrt(n_samples)), 1000, 5000, 10000,
+                  n_samples, 50000, 100000, 200000, ])
+
+    from geosketch import gs
+    log('k = sqrt(n)')
+    print('\n'.join([ str(x) for x in gs(X_dimred, 20000, verbose=2) ]))
+    print('')
+    log('k = 20000')
+    gs(X_dimred, 20000, k=20000, verbose=2)
+    log('k = 500000')
+    gs(X_dimred, 20000, k=500000, verbose=2)
+    exit()
     
     experiments(
-        X_dimred, NAMESPACE, n_seeds=5,
+        X_dimred, NAMESPACE, n_seeds=4,
         cell_labels=cell_labels,
         louvain_ami=True,
         spectral_nmi=True,

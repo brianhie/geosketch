@@ -166,7 +166,7 @@ def experiment(sampling_fn, X_dimred, name, cell_labels=None,
             continue
 
         log('Sampling {}...'.format(N))
-        samp_idx = sampling_fn(X_dimred, N)
+        samp_idx = sampling_fn(X_dimred, N, k=N)
         log('Found {} entries'.format(len(set(samp_idx))))
 
         log('Visualizing sampled...')
@@ -301,29 +301,31 @@ def experiments(X_dimred, name, n_seeds=10, use_cache=True, **kwargs):
     #Ns = [ 1000, 2000, 3000, 4000 ]
 
     sampling_fns = [
-        uniform,
+        #uniform,
+        #gs_gap,
+        #gs_gap,
         gs_gap,
-        gs_gap,
-        kmeanspp,
-        srs,
-        gs_grid,
-        louvain1,
-        louvain3,
-        kmeans,
-        kmeansppp,
+        #kmeanspp,
+        #srs,
+        #gs_grid,
+        #louvain1,
+        #louvain3,
+        #kmeans,
+        #kmeansppp,
     ]
     
     sampling_fn_names = [
-        'uniform',
-        'gs_gap',
-        'gs_gap_N',
-        'kmeans++',
-        'srs',
-        'gs_grid',
-        'louvain1',
-        'louvain3',
-        'kmeans',
-        'kmeans+++',
+        #'uniform',
+        #'gs_gap',
+        #'gs_gap_N',
+        'gs_gap_2N',
+        #'kmeans++',
+        #'srs',
+        #'gs_grid',
+        #'louvain1',
+        #'louvain3',
+        #'kmeans',
+        #'kmeans+++',
     ]
 
     not_replace = set([ 'kmeans++', 'dropClust' ])
@@ -363,6 +365,13 @@ def experiments(X_dimred, name, n_seeds=10, use_cache=True, **kwargs):
                                                replace=replace)
                         t1 = time()
                         log('Sampling gs_gap_N done.')
+                    elif sampling_fn_names[s_idx] == 'gs_gap_2N':
+                        log('Sampling gs_gap_2N...')
+                        t0 = time()
+                        samp_idx = sampling_fn(X_dimred, N, k=2*N, seed=seed,
+                                               replace=replace)
+                        t1 = time()
+                        log('Sampling gs_gap_2N done.')
                     elif sampling_fn_names[s_idx] == 'gs_gap_k':
                         log('Sampling gs_gap_k...')
                         t0 = time()
@@ -493,20 +502,28 @@ def experiment_stats(of, X_dimred, samp_idx, name, **kwargs):
         
     if 'louvain_ami' in kwargs and kwargs['louvain_ami']:
         cell_labels = kwargs['cell_labels']
-        
+
         adata = AnnData(X=X_dimred[samp_idx, :])
         sc.pp.neighbors(adata, use_rep='X')
-        sc.tl.louvain(adata, resolution=1., key_added='louvain')
-        louv_labels = np.array(adata.obs['louvain'].tolist())
+        
+        amis = []
+        bamis = []
+        
+        for r in [ 0.5, 1., 2. ]:
+            sc.tl.louvain(adata, resolution=r, key_added='louvain')
+            louv_labels = np.array(adata.obs['louvain'].tolist())
 
-        full_labels = label_approx(X_dimred, X_dimred[samp_idx, :], louv_labels)
+            full_labels = label_approx(X_dimred, X_dimred[samp_idx, :], louv_labels)
 
-        ami = adjusted_mutual_info_score(cell_labels, full_labels)
-        bami = adjusted_mutual_info_score(
-            cell_labels, full_labels, dist='balanced'
-        )
-        stats.append(ami)
-        stats.append(bami)
+            ami = adjusted_mutual_info_score(cell_labels, full_labels)
+            bami = adjusted_mutual_info_score(
+                cell_labels, full_labels, dist='balanced'
+            )
+            amis.append(ami)
+            bamis.append(bami)
+            
+        stats.append(max(amis))
+        stats.append(max(bamis))
         stats.append(len(set(louv_labels)))
         
     if 'sub_labels' in kwargs:

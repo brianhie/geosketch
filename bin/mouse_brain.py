@@ -107,7 +107,7 @@ if __name__ == '__main__':
     ]
 
     experiments(
-        X_dimred, NAMESPACE, n_seeds=5,
+        X_dimred, NAMESPACE, n_seeds=4,
         cell_labels=cell_labels,
         louvain_ami=True,
         spectral_nmi=True,
