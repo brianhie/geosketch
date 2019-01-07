@@ -774,7 +774,7 @@ def adjusted_mutual_info_score(labels_true, labels_pred,
     
     # Calculate entropy for each labeling
     if dist == 'balanced':
-        h_true, h_pred = log(classes.shape[0]), entropy(labels_pred)
+        h_true, h_pred = log(classes.shape[0]), entropy_pi(contingency_balanced.sum(0))
     else:
         h_true, h_pred = entropy(labels_true), entropy(labels_pred)
         

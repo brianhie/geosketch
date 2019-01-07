@@ -92,15 +92,15 @@ if __name__ == '__main__':
         X_dimred = U[:, :k] * s[:k]
 
         viz_genes = [
-            #'CD74', 'JUNB', 'B2M',
+            'CD74', 'JUNB', 'B2M',
             'CD14', 'CD68',
-            #'PF4',
-            #'HBB',
-            #'CD19',
+            'PF4',
+            'HBB',
+            'CD19',
         ]
 
         from geosketch import gs, uniform
-        samp_idx = gs(X_dimred, 20000, replace=False)
+        samp_idx = gs(X_dimred, 20000, k=20000, replace=False)
 
         adata = AnnData(X=X_dimred[samp_idx, :])
         sc.pp.neighbors(adata, use_rep='X')
@@ -112,8 +112,17 @@ if __name__ == '__main__':
 
         X_samp = X[samp_idx].tocsc()
         
-        clusterA = set([ 22 ])
-        clusterB = set([ 0, ])#12, 18 ])
+        embedding = visualize(
+            [ X_dimred[samp_idx] ], cell_labels,
+            name + '_louvain',
+            [ str(ct) for ct in sorted(set(louv_labels)) ],
+            gene_names=viz_genes, gene_expr=X_samp, genes=genes,
+            perplexity=100, n_iter=500, image_suffix='.png',
+            viz_cluster=True
+        )
+        exit()
+        clusterA = set([ 13 ])
+        clusterB = set([ 0, ])#16, 11, 10 ])
         
         labels = []
         for cl in cell_labels:
@@ -132,23 +141,12 @@ if __name__ == '__main__':
         violin_jitter(X_samp, genes, 'B2M', labels, 0, 1, xlabels)
         violin_jitter(X_samp, genes, 'JUNB', labels, 0, 1, xlabels)
         
-        #auroc(X_samp, genes, np.array(labels), 0, background=1)
-        #
-        #continue
-        #
+        auroc(X_samp, genes, np.array(labels), 0, background=1)
+        
         #for label in sorted(set(louv_labels)):
         #    log('Label {}'.format(label))
         #    auroc(X_samp, genes, louv_labels, label)
         #    log('')
 
-        embedding = visualize(
-            [ X_dimred[samp_idx] ], cell_labels,
-            name + '_louvain',
-            [ str(ct) for ct in sorted(set(louv_labels)) ],
-            gene_names=viz_genes, gene_expr=X_samp, genes=genes,
-            perplexity=100, n_iter=500, image_suffix='.png',
-            viz_cluster=True
-        )
-        
         #visualize_dropout(X_samp, embedding, image_suffix='.png',
         #                  viz_prefix=name + '_louvain_dropout')

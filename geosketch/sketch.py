@@ -33,6 +33,8 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
     
     unit = (low_unit + high_unit) / 4.
 
+    d_to_argsort = {}
+    
     n_iter = 0
     while True:
 
@@ -46,9 +48,11 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
                 continue
                 
             points_d = X[:, d]
+            if d not in d_to_argsort:
+                d_to_argsort[d] = np.argsort(points_d)
             curr_start = None
             curr_interval = -1
-            for sample_idx in np.argsort(points_d):
+            for sample_idx in d_to_argsort[d]:
                 if curr_start is None or \
                    curr_start + unit < points_d[sample_idx]:
                     curr_start = points_d[sample_idx]

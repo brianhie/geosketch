@@ -284,7 +284,7 @@ def experiments(X_dimred, name, n_seeds=10, use_cache=True, **kwargs):
 
     mkdir_p('target/experiments')
         
-    of = open('target/experiments/{}.txt.7'.format(name), 'a')
+    of = open('target/experiments/{}.txt'.format(name), 'a')
     of.write('\t'.join(columns) + '\n')
 
     if 'Ns' in kwargs and kwargs['Ns'] is not None:
@@ -294,19 +294,19 @@ def experiments(X_dimred, name, n_seeds=10, use_cache=True, **kwargs):
         for scale in [ 0.02, 0.04, 0.06, 0.08, 0.1 ]:
             Ns.append(int(scale * X_dimred.shape[0]))
         Ns = np.array(Ns)
-        while max(Ns) > 30000:
+        while max(Ns) > 33300:
             Ns = Ns / 2.
         Ns = [ int(N) for N in Ns ]
 
     #Ns = [ 1000, 2000, 3000, 4000 ]
 
     sampling_fns = [
-        #uniform,
-        #gs_gap,
-        #gs_gap,
+        uniform,
         gs_gap,
-        #kmeanspp,
-        #srs,
+        gs_gap,
+        #gs_gap,
+        kmeanspp,
+        srs,
         #gs_grid,
         #louvain1,
         #louvain3,
@@ -315,12 +315,12 @@ def experiments(X_dimred, name, n_seeds=10, use_cache=True, **kwargs):
     ]
     
     sampling_fn_names = [
-        #'uniform',
-        #'gs_gap',
-        #'gs_gap_N',
-        'gs_gap_2N',
-        #'kmeans++',
-        #'srs',
+        'uniform',
+        'gs_gap',
+        'gs_gap_N',
+        #'gs_gap_2N',
+        'kmeans++',
+        'srs',
         #'gs_grid',
         #'louvain1',
         #'louvain3',

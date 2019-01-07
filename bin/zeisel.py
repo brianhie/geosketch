@@ -36,6 +36,9 @@ if __name__ == '__main__':
     datasets, genes_list, n_cells = load_names(data_names, norm=False)
     datasets, genes = merge_datasets(datasets, genes_list)
     X = vstack(datasets)
+    qc_idx = [ i for i, s in enumerate(np.sum(X != 0, axis=1)) if s >= 500 ]
+    print('Found {} valid cells among all datasets'.format(len(qc_idx)))
+    X = X[qc_idx]
     
     if not os.path.isfile('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE)):
         log('Dimension reduction with {}...'.format(METHOD))
@@ -51,6 +54,7 @@ if __name__ == '__main__':
         open('data/cell_labels/zeisel_cluster.txt')
         .read().rstrip().split('\n')
     )
+    labels = labels[qc_idx]
     le = LabelEncoder().fit(labels)
     cell_labels = le.transform(labels)
 
@@ -58,16 +62,6 @@ if __name__ == '__main__':
     ks = sorted([ 10, 200, 500, int(np.sqrt(n_samples)), 1000, 5000, 10000,
                   n_samples, 50000, 100000, 200000, ])
 
-    from geosketch import gs
-    log('k = sqrt(n)')
-    print('\n'.join([ str(x) for x in gs(X_dimred, 20000, verbose=2) ]))
-    print('')
-    log('k = 20000')
-    gs(X_dimred, 20000, k=20000, verbose=2)
-    log('k = 500000')
-    gs(X_dimred, 20000, k=500000, verbose=2)
-    exit()
-    
     experiments(
         X_dimred, NAMESPACE, n_seeds=4,
         cell_labels=cell_labels,
