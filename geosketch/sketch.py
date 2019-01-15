@@ -1,3 +1,4 @@
+from collections import Counter
 import numpy as np
 from sklearn.preprocessing import normalize
 from sklearn.metrics.pairwise import pairwise_distances
@@ -234,6 +235,72 @@ def gs_grid(X, N, k='auto', seed=None, replace=False,
 
     return sorted(gs_idx)
 
+def pc_pick(X, N, seed=None, replace=False, prenormalized=False):
+    n_samples, n_features = X.shape
+
+    if not replace and N > n_samples:
+        raise ValueError('Cannot sample {} elements from {} elements '
+                         'without replacement'.format(N, n_samples))
+    if not replace and N == n_samples:
+        return range(N)
+
+    if not seed is None:
+        np.random.seed(seed)
+
+    X = X - X.min(0)
+
+    pc_to_argsort = {}
+    pc_to_argidx = {}
+
+    pcp_idx = []
+    for i in range(N):
+        pc = np.random.choice(X.shape[1])
+        if not pc in pc_to_argsort:
+            pc_to_argsort[pc] = np.argsort(-X[:, pc])
+            pc_to_argidx[pc] = 0
+        argsort = pc_to_argsort[pc]
+        argidx = pc_to_argidx[pc]
+        pcp_idx.append(argsort[argidx])
+        if not replace:
+            pc_to_argidx[pc] += 1
+
+    return sorted(pcp_idx)
+
+def srs_positive_annoy(X, N, seed=None, replace=False, prenormalized=False):
+    from annoy import AnnoyIndex
+    
+    n_samples, n_features = X.shape
+
+    if not replace and N > n_samples:
+        raise ValueError('Cannot sample {} elements from {} elements '
+                         'without replacement'.format(N, n_samples))
+    if not replace and N == n_samples:
+        return range(N)
+
+    if not seed is None:
+        np.random.seed(seed)
+
+    X = X - X.min(0)
+
+    if not prenormalized:
+        X = normalize(X).astype('float32')
+
+    srs_idx = set()
+    for i in range(N):
+        aindex = AnnoyIndex(X.shape[1], metric='euclidean')
+        for i in range(X.shape[0]):
+            if i not in srs_idx:
+                aindex.add_item(i, X[i, :])
+        aindex.build(10)
+        
+        Phi_i = np.random.normal(size=(n_features))
+        Phi_i /= np.linalg.norm(Phi_i)
+
+        nearest_site = aindex.get_nns_by_vector(Phi_i, 1)
+        srs_idx.add(nearest_site[0])
+
+    return sorted(srs_idx)
+
 def gs_exact(X, N, k='auto', seed=None, replace=False,
              tol=1e-3, n_iter=300, verbose=1):
     ge_idx = gs(X, N, replace=replace)
@@ -413,7 +480,7 @@ def label_exact(X, sites, site_labels):
         labels.append(site_labels[nearest_site])
     return np.array(labels)
 
-def label_approx(X, sites, site_labels):
+def label_approx(X, sites, site_labels, k=1):
     from annoy import AnnoyIndex
     
     assert(X.shape[1] == sites.shape[1])
@@ -427,10 +494,13 @@ def label_approx(X, sites, site_labels):
     labels = []
     for i in range(X.shape[0]):
         # Find nearest site point.
-        nearest_site = aindex.get_nns_by_vector(X[i, :], 1)
-        if len(nearest_site) < 1:
+        nearest_sites = aindex.get_nns_by_vector(X[i, :], k)
+        if len(nearest_sites) < 1:
             labels.append(None)
             continue
-        labels.append(site_labels[nearest_site[0]])
+        label = Counter([
+            site_labels[ns] for ns in nearest_sites
+        ]).most_common(1)[0][0]
+        labels.append(label)
         
     return np.array(labels)

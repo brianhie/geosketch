@@ -30,8 +30,8 @@ data_names = [
 ]
 
 if __name__ == '__main__':
-    from process import process
-    process(data_names, min_trans=0)
+    #from process import process
+    #process(data_names, min_trans=0)
     
     datasets, genes_list, n_cells = load_names(data_names, norm=False)
     qc_idx = keep_valid(datasets)
@@ -70,23 +70,23 @@ if __name__ == '__main__':
     #    X_dimred, NAMESPACE, cell_labels=cell_labels,
     #    viz_type='tsne', N_only=20000, kmeans=False, visualize_orig=False
     #)
-    experiment_kmeanspp(
-        X_dimred, NAMESPACE, cell_labels=cell_labels,
-        viz_type='tsne', N_only=20000, kmeans=False, visualize_orig=False
-    )
+    #experiment_kmeanspp(
+    #    X_dimred, NAMESPACE, cell_labels=cell_labels,
+    #    viz_type='tsne', N_only=20000, kmeans=False, visualize_orig=False
+    #)
     
-    #experiment_gs(
-    #    X_dimred, NAMESPACE, cell_labels=cell_labels,
-    #    viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
-    #)
-    #experiment_uni(
-    #    X_dimred, NAMESPACE, cell_labels=cell_labels,
-    #    viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
-    #)
-    #experiment_srs(
-    #    X_dimred, NAMESPACE, cell_labels=cell_labels,
-    #    viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
-    #)
+    experiment_gs(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
+    )
+    experiment_uni(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
+    )
+    experiment_srs(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
+    )
     experiment_kmeanspp(
         X_dimred, NAMESPACE, cell_labels=cell_labels,
         viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False

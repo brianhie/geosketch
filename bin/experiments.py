@@ -166,7 +166,10 @@ def experiment(sampling_fn, X_dimred, name, cell_labels=None,
             continue
 
         log('Sampling {}...'.format(N))
-        samp_idx = sampling_fn(X_dimred, N, k=N)
+        if sample_type == 'gs':
+            samp_idx = sampling_fn(X_dimred, N, k=N)
+        else:
+            samp_idx = sampling_fn(X_dimred, N)
         log('Found {} entries'.format(len(set(samp_idx))))
 
         log('Visualizing sampled...')
@@ -181,22 +184,22 @@ def experiment(sampling_fn, X_dimred, name, cell_labels=None,
         if viz_type == 'umap':
             adata = AnnData(X=X_dimred[samp_idx, :])
             sc.pp.neighbors(adata, use_rep='X')
-            sc.tl.umap(adata)
+            sc.tl.umap(adata, min_dist=0.5)
             embedding = np.array(adata.obsm['X_umap'])
-            embedding[embedding < -20] = -20
-            embedding[embedding > 20] = 20
+            embedding[embedding < -20] = -15
+            #embedding[embedding > 20] -= 5
             visualize(None, cell_labels[samp_idx],
                       name + '_umap_{}{}'.format(sample_type, N), cell_types,
                       embedding=embedding,
                       gene_names=gene_names, gene_expr=expr, genes=genes,
-                      size=max(int(30000/N), 1), image_suffix='.png')
+                      size=max(int(30000/N), 5), image_suffix='.png')
         else:
             visualize([ X_dimred[samp_idx, :] ], cell_labels[samp_idx],
                       name + '_{}{}'.format(sample_type, N), cell_types,
                       gene_names=gene_names, gene_expr=expr, genes=genes,
                       #perplexity=5, n_iter=500,
                       perplexity=max(N/200, 50), n_iter=500,
-                      size=max(int(30000/N), 1), image_suffix='.png')
+                      size=max(int(30000/N), 5), image_suffix='.png')
 
         report_cluster_counts(cell_labels[samp_idx])
 
@@ -284,7 +287,7 @@ def experiments(X_dimred, name, n_seeds=10, use_cache=True, **kwargs):
 
     mkdir_p('target/experiments')
         
-    of = open('target/experiments/{}.txt'.format(name), 'a')
+    of = open('target/experiments/{}.txt.19'.format(name), 'a')
     of.write('\t'.join(columns) + '\n')
 
     if 'Ns' in kwargs and kwargs['Ns'] is not None:
@@ -294,8 +297,8 @@ def experiments(X_dimred, name, n_seeds=10, use_cache=True, **kwargs):
         for scale in [ 0.02, 0.04, 0.06, 0.08, 0.1 ]:
             Ns.append(int(scale * X_dimred.shape[0]))
         Ns = np.array(Ns)
-        while max(Ns) > 33300:
-            Ns = Ns / 2.
+        #while max(Ns) > 33300:
+        #    Ns = Ns / 2.
         Ns = [ int(N) for N in Ns ]
 
     #Ns = [ 1000, 2000, 3000, 4000 ]
@@ -304,9 +307,10 @@ def experiments(X_dimred, name, n_seeds=10, use_cache=True, **kwargs):
         uniform,
         gs_gap,
         gs_gap,
-        #gs_gap,
         kmeanspp,
         srs,
+        #pc_pick,
+        #srs_positive,
         #gs_grid,
         #louvain1,
         #louvain3,
@@ -318,9 +322,10 @@ def experiments(X_dimred, name, n_seeds=10, use_cache=True, **kwargs):
         'uniform',
         'gs_gap',
         'gs_gap_N',
-        #'gs_gap_2N',
         'kmeans++',
         'srs',
+        #'pc_pick',
+        #'srs_positive',
         #'gs_grid',
         #'louvain1',
         #'louvain3',
@@ -360,11 +365,23 @@ def experiments(X_dimred, name, n_seeds=10, use_cache=True, **kwargs):
                         log('Sampling dropClust done.')
                     elif sampling_fn_names[s_idx] == 'gs_gap_N':
                         log('Sampling gs_gap_N...')
-                        t0 = time()
-                        samp_idx = sampling_fn(X_dimred, N, k=N, seed=seed,
-                                               replace=replace)
-                        t1 = time()
-                        log('Sampling gs_gap_N done.')
+                        if use_cache:
+                            samp_idx = load_cached_idx(sampling_fn_names[s_idx],
+                                                       name, N, seed)
+                        else:
+                            samp_idx = None
+                        
+                        if samp_idx is None:
+                            t0 = time()
+                            samp_idx = sampling_fn(X_dimred, N, k=N, seed=seed,
+                                                   replace=replace)
+                            t1 = time()
+                            log('Sampling gs_gap_N done.')
+                            if use_cache:
+                                save_cached_idx(samp_idx, sampling_fn_names[s_idx],
+                                                name, N, seed)
+                        else:
+                            t1 = t0 = 0
                     elif sampling_fn_names[s_idx] == 'gs_gap_2N':
                         log('Sampling gs_gap_2N...')
                         t0 = time()
@@ -491,7 +508,7 @@ def experiment_stats(of, X_dimred, samp_idx, name, **kwargs):
         spect.fit(X_dimred[samp_idx, :])
 
         full_labels = label_approx(X_dimred, X_dimred[samp_idx, :],
-                                   spect.labels_)
+                                   spect.labels_, k=5)
                 
         bnmi = normalized_mutual_info_score(
             cell_labels, full_labels, dist='balanced'
@@ -513,7 +530,8 @@ def experiment_stats(of, X_dimred, samp_idx, name, **kwargs):
             sc.tl.louvain(adata, resolution=r, key_added='louvain')
             louv_labels = np.array(adata.obs['louvain'].tolist())
 
-            full_labels = label_approx(X_dimred, X_dimred[samp_idx, :], louv_labels)
+            full_labels = label_approx(X_dimred, X_dimred[samp_idx, :],
+                                       louv_labels, k=5)
 
             ami = adjusted_mutual_info_score(cell_labels, full_labels)
             bami = adjusted_mutual_info_score(

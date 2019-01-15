@@ -1,6 +1,8 @@
+from anndata import AnnData
 import numpy as np
 import os
 from scanorama import *
+import scanpy.api as sc
 from scipy.sparse import vstack
 
 from process import load_names
@@ -58,65 +60,61 @@ if __name__ == '__main__':
     le = LabelEncoder().fit(labels)
     cell_labels = le.transform(labels)
 
-    n_samples = X.shape[0]
-    ks = sorted([ 10, 200, 500, int(np.sqrt(n_samples)), 1000, 5000, 10000,
-                  n_samples, 50000, 100000, 200000, ])
-
+    #adata = AnnData(X=X_dimred)
+    #sc.pp.neighbors(adata, use_rep='X')
+    #sc.tl.louvain(adata, resolution=1., key_added='louvain')
+    #louv_labels = np.array(adata.obs['louvain'].tolist())
+    #le = LabelEncoder().fit(louv_labels)
+    #louv_labels = le.transform(louv_labels)
+    
     experiments(
         X_dimred, NAMESPACE, n_seeds=4,
         cell_labels=cell_labels,
-        louvain_ami=True,
-        spectral_nmi=True,
+        #louvain_ami=True,
+        #spectral_nmi=True,
         rare=True,
-        rare_label=le.transform(['Ependymal'])[0],
-        max_min_dist=True,
+        rare_label=le.transform(['Astrocyte'])[0],
+        #max_min_dist=True,
     )
     exit()
-
-    visualize(
-        None, cell_labels,
-        NAMESPACE + '_tsne_full',
-        [ str(ct) for ct in sorted(set(cell_labels)) ],
-        embedding=np.loadtxt('data/embedding/embedding_zeisel_tsne.txt'),
-        image_suffix='.png',        
-    )
-    visualize(
-        None, cell_labels,
-        NAMESPACE + '_umap_full',
-        [ str(ct) for ct in sorted(set(cell_labels)) ],
-        embedding=np.loadtxt('data/embedding/embedding_zeisel_umap.txt'),
-        image_suffix='.png',        
-    )
     
     report_cluster_counts(labels)
     
     from differential_entropies import differential_entropies
     differential_entropies(X_dimred, labels)
 
+    #visualize(
+    #    None, cell_labels,
+    #    NAMESPACE + '_tsne_full',
+    #    [ str(ct) for ct in sorted(set(cell_labels)) ],
+    #    embedding=np.loadtxt('data/embedding/embedding_zeisel_tsne.txt'),
+    #    image_suffix='.png',        
+    #)
+    #visualize(
+    #    None, cell_labels,
+    #    NAMESPACE + '_umap_full',
+    #    [ str(ct) for ct in sorted(set(cell_labels)) ],
+    #    embedding=np.loadtxt('data/embedding/embedding_zeisel_umap.txt'),
+    #    image_suffix='.png',        
+    #)
+    #
     experiment_gs(
         X_dimred, NAMESPACE, cell_labels=cell_labels,
-        #gene_names=viz_genes, genes=genes,
-        #gene_expr=vstack(datasets),
-        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
+        viz_type='umap', N_only=4652, kmeans=False, visualize_orig=False
     )
     experiment_uni(
         X_dimred, NAMESPACE, cell_labels=cell_labels,
-        #gene_names=viz_genes, genes=genes,
-        #gene_expr=vstack(datasets),
-        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
+        viz_type='umap', N_only=4652, kmeans=False, visualize_orig=False
     )
     experiment_srs(
         X_dimred, NAMESPACE, cell_labels=cell_labels,
-        #gene_names=viz_genes, genes=genes,
-        #gene_expr=vstack(datasets),
-        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
+        viz_type='umap', N_only=4652, kmeans=False, visualize_orig=False
     )
     experiment_kmeanspp(
         X_dimred, NAMESPACE, cell_labels=cell_labels,
-        #gene_names=viz_genes, genes=genes,
-        #gene_expr=vstack(datasets),
-        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
+        viz_type='umap', N_only=4652, kmeans=False, visualize_orig=False
     )
+    exit()
     
     from geosketch import gs, uniform, srs
     samp_idx = gs(X_dimred, 20000, replace=False)
@@ -152,3 +150,4 @@ if __name__ == '__main__':
     cell_labels = le.transform(cell_labels)
 
     
+

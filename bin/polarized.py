@@ -36,7 +36,7 @@ if __name__ == '__main__':
     #                      gene_expr=vstack(datasets),
     #                      perplexity=100, n_iter=400)
     
-    gene = 'B2M'
+    gene = 'HLA-DRA'
     
     import seaborn as sns
     from scipy.stats import ttest_ind
