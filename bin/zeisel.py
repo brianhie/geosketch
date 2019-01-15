@@ -73,7 +73,7 @@ if __name__ == '__main__':
         #louvain_ami=True,
         #spectral_nmi=True,
         rare=True,
-        rare_label=le.transform(['Astrocyte'])[0],
+        rare_label=le.transform(['Astrocytes'])[0],
         #max_min_dist=True,
     )
     exit()
