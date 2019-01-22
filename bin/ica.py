@@ -126,8 +126,9 @@ if __name__ == '__main__':
     for integration, name in zip(integrations, integration_names):
         adata = AnnData(X=integration[idx])
         sc.pp.neighbors(adata, use_rep='X')
-        sc.tl.umap(adata, min_dist=0.75)
+        sc.tl.umap(adata)
         embedding = np.array(adata.obsm['X_umap'])
+        embedding[embedding < -20] = -20
         visualize(
             None, labels[idx], name + '_umap',
             [ str(ct) for ct in sorted(set(labels)) ],

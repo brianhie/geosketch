@@ -42,6 +42,14 @@ if __name__ == '__main__':
     print('Found {} valid cells among all datasets'.format(len(qc_idx)))
     X = X[qc_idx]
     
+    import time
+    t0 = time.time()
+    k = DIMRED
+    U, s, Vt = pca(normalize(X), k=k)
+    X_dimred = U[:, :k] * s[:k]
+    print(time.time() - t0)
+    exit()
+    
     if not os.path.isfile('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE)):
         log('Dimension reduction with {}...'.format(METHOD))
         X_dimred = reduce_dimensionality(
@@ -67,23 +75,22 @@ if __name__ == '__main__':
     #le = LabelEncoder().fit(louv_labels)
     #louv_labels = le.transform(louv_labels)
     
-    plot_rare(X_dimred, cell_labels, le.transform(['Ependymal'])[0],
-              NAMESPACE, n_seeds=4)
-    exit()
-    
     experiments(
         X_dimred, NAMESPACE, n_seeds=4,
-        #cell_labels=cell_labels,
-        #cell_exp_ratio=True,
+        cell_labels=cell_labels,
+        cell_exp_ratio=True,
         #louvain_ami=True,
         #spectral_nmi=True,
         #rare=True,
         #rare_label=le.transform(['Ependymal'])[0],
-        max_min_dist=True,
+        #max_min_dist=True,
     )
     exit()
     
     report_cluster_counts(labels)
+    
+    plot_rare(X_dimred, cell_labels, le.transform(['Ependymal'])[0],
+              NAMESPACE, n_seeds=4)
     
     from differential_entropies import differential_entropies
     differential_entropies(X_dimred, labels)

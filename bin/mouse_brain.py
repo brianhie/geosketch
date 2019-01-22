@@ -118,6 +118,7 @@ if __name__ == '__main__':
     
     plot_rare(X_dimred, cell_labels, le.transform(['Macrophage'])[0],
               NAMESPACE, n_seeds=4)
+    
     from geosketch import gs
     samp_idx = gs(X_dimred, 1000, replace=False)
     save_sketch(X, samp_idx, genes, NAMESPACE + '1000')
