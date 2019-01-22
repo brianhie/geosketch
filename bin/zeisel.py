@@ -67,14 +67,19 @@ if __name__ == '__main__':
     #le = LabelEncoder().fit(louv_labels)
     #louv_labels = le.transform(louv_labels)
     
+    plot_rare(X_dimred, cell_labels, le.transform(['Ependymal'])[0],
+              NAMESPACE, n_seeds=4)
+    exit()
+    
     experiments(
         X_dimred, NAMESPACE, n_seeds=4,
-        cell_labels=cell_labels,
+        #cell_labels=cell_labels,
+        #cell_exp_ratio=True,
         #louvain_ami=True,
         #spectral_nmi=True,
-        rare=True,
-        rare_label=le.transform(['Astrocytes'])[0],
-        #max_min_dist=True,
+        #rare=True,
+        #rare_label=le.transform(['Ependymal'])[0],
+        max_min_dist=True,
     )
     exit()
     

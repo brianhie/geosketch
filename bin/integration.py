@@ -14,7 +14,8 @@ def integrate_sketch(datasets_dimred, integration_fn, integration_fn_args={},
                      sampling_fn=gs, N=4000, n_iter=1):
 
     sketch_idxs = [
-        sorted(set(gs(X, N, k=N, replace=False))) # | set(uniform(X, N, replace=False)))
+        #sorted(set(gs(X, N, k=N, replace=False))) # | set(uniform(X, N, replace=False)))
+        sorted(set(uniform(X, N, replace=False)))
         for X in datasets_dimred
     ]
     datasets_sketch = [ X[idx] for X, idx in zip(datasets_dimred, sketch_idxs) ]

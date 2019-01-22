@@ -20,7 +20,6 @@ DIMRED = 30
 
 data_names = [
     'data/ica/ica_cord_blood_h5',
-    #'data/ica/ica_bone_marrow_h5',
 ]
 
 def auroc(X, genes, labels, focus, background=None, cutoff=0.7):
@@ -83,9 +82,9 @@ if __name__ == '__main__':
 
         X = normalize(dataset)
 
-        gt_idx = [ i for i, s in enumerate(np.sum(X != 0, axis=1))
-                   if s >= 500 ]
-        X = X[gt_idx]
+        filter_idx = [ i for i, s in enumerate(np.sum(X != 0, axis=1))
+                       if s >= 500 ]
+        X = X[filter_idx]
         
         k = DIMRED
         U, s, Vt = pca(X, k=k)
@@ -104,7 +103,7 @@ if __name__ == '__main__':
 
         adata = AnnData(X=X_dimred[samp_idx, :])
         sc.pp.neighbors(adata, use_rep='X')
-        sc.tl.louvain(adata, resolution=1., key_added='louvain')
+        sc.tl.louvain(adata, key_added='louvain')
         louv_labels = np.array(adata.obs['louvain'].tolist())
 
         le = LabelEncoder().fit(louv_labels)
@@ -112,17 +111,19 @@ if __name__ == '__main__':
 
         X_samp = X[samp_idx].tocsc()
         
-        #embedding = visualize(
-        #    [ X_dimred[samp_idx] ], cell_labels,
-        #    name + '_louvain',
-        #    [ str(ct) for ct in sorted(set(louv_labels)) ],
-        #    gene_names=viz_genes, gene_expr=X_samp, genes=genes,
-        #    perplexity=100, n_iter=500, image_suffix='.png',
-        #    viz_cluster=True
-        #)
-        #visualize_dropout(X_samp, embedding, image_suffix='.png',
-        #                  viz_prefix=name + '_louvain_dropout')
-        #exit()
+        sc.tl.umap(adata)
+        embedding = np.array(adata.obsm['X_umap'])
+        visualize(
+            None, cell_labels,
+            name + '_umap_louvain',
+            [ str(ct) for ct in sorted(set(louv_labels)) ],
+            gene_names=viz_genes, gene_expr=X_samp, genes=genes,
+            embedding=embedding, image_suffix='.png',
+            viz_cluster=True
+        )
+        exit()
+        visualize_dropout(X_samp, embedding, image_suffix='.png',
+                          viz_prefix=name + '_umap_louvain_dropout')
         
         clusterA = set([ 20 ])
         clusterB = set([ 12 ])

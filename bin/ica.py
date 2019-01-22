@@ -79,9 +79,9 @@ if __name__ == '__main__':
         curr_label += 1
     labels = np.array(labels, dtype=int)
 
-    log('Harmony (regular)...')
-    harmony_full = np.concatenate(harmony(datasets_dimred[:]))
-
+    #log('Harmony (regular)...')
+    #harmony_full = np.concatenate(harmony(datasets_dimred[:]))
+    
     log('Harmony + GeoSketch...')
     harmony_sketch = np.concatenate(integrate_sketch(
         datasets_dimred[:], harmony,
@@ -92,10 +92,10 @@ if __name__ == '__main__':
         datasets_dimred[:], assemble, integration_fn_args={ 'knn': 50 },
     ))
 
-    log('Scanorama (regular)...')
-    scanorama_full = np.concatenate(assemble(
-        datasets_dimred[:], knn=200, batch_size=1000
-    ))
+    #log('Scanorama (regular)...')
+    #scanorama_full = np.concatenate(assemble(
+    #    datasets_dimred[:], knn=200, batch_size=1000
+    #))
     
     log('Done integrating.')
     
@@ -105,14 +105,14 @@ if __name__ == '__main__':
     integrations = [
         harmony_sketch,
         scanorama_sketch,
-        harmony_full,
-        scanorama_full,
+        #harmony_full,
+        #scanorama_full,
     ]
     integration_names = [
         'harmony_sketch',
         'scanorama_sketch',
-        'harmony_full',
-        'scanorama_full'
+        #'harmony_full',
+        #'scanorama_full'
     ]
     
     for integration, name in zip(integrations, integration_names):
@@ -123,6 +123,7 @@ if __name__ == '__main__':
             viz_cluster=False
         )
         
+    for integration, name in zip(integrations, integration_names):
         adata = AnnData(X=integration[idx])
         sc.pp.neighbors(adata, use_rep='X')
         sc.tl.umap(adata, min_dist=0.75)
@@ -130,7 +131,8 @@ if __name__ == '__main__':
         visualize(
             None, labels[idx], name + '_umap',
             [ str(ct) for ct in sorted(set(labels)) ],
-            image_suffix='.png', viz_cluster=False
+            image_suffix='.png', viz_cluster=False,
+            embedding=embedding
         )
         
         print(name)

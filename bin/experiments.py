@@ -1,10 +1,13 @@
 from anndata import AnnData
+import math
 import numpy as np
 import os
+import pandas as pd
 from scanorama import *
 import scanpy.api as sc
 import scipy.stats
 from scipy.sparse import vstack
+import seaborn as sns
 from sklearn.cluster import KMeans
 from sklearn.cluster import SpectralClustering
 from sklearn.metrics import adjusted_rand_score
@@ -186,8 +189,8 @@ def experiment(sampling_fn, X_dimred, name, cell_labels=None,
             sc.pp.neighbors(adata, use_rep='X')
             sc.tl.umap(adata, min_dist=0.5)
             embedding = np.array(adata.obsm['X_umap'])
-            embedding[embedding < -20] = -15
-            #embedding[embedding > 20] -= 5
+            embedding[embedding < -20] = -20
+            embedding[embedding > 20] = -20
             visualize(None, cell_labels[samp_idx],
                       name + '_umap_{}{}'.format(sample_type, N), cell_types,
                       embedding=embedding,
@@ -220,17 +223,17 @@ def err_exit(param_name):
     sys.stderr.write('Needs `{}\' param.\n'.format(param_name))
     exit(1)
 
-def load_cached_idx(name, dirname, N, seed):
+def load_cached_idx(name, dirname, N, seed, dtype=int):
     cache_fname = 'data/cache/{}/{}_{}_{}.txt'.format(dirname, name, N, seed)
     if os.path.isfile(cache_fname):
         with open(cache_fname, 'r') as f:
-            return [ int(x) for x in f.read().rstrip().split() ]
+            return [ dtype(x) for x in f.read().rstrip().split() ]
     
-def save_cached_idx(samp_idx, name, dirname, N, seed):
+def save_cached_idx(samp_idx, name, dirname, N, seed, dtype=int):
     cache_fname = 'data/cache/{}/{}_{}_{}.txt'.format(dirname, name, N, seed)
     with open(cache_fname, 'w') as of:
         for si in samp_idx:
-            of.write(str(int(si)) + '\n')
+            of.write(str(dtype(si)) + '\n')
         
 def experiments(X_dimred, name, n_seeds=10, use_cache=True, **kwargs):
 
@@ -259,6 +262,10 @@ def experiments(X_dimred, name, n_seeds=10, use_cache=True, **kwargs):
 
     if 'max_min_dist' in kwargs and kwargs['max_min_dist']:
         columns.append('max_min_dist')
+        columns.append('9999_min_dist')
+        columns.append('999_min_dist')
+        columns.append('99_min_dist')
+        columns.append('95_min_dist')
         
     if 'kmeans_nmi' in kwargs and kwargs['kmeans_nmi']:
         if not 'cell_labels' in kwargs:
@@ -282,12 +289,17 @@ def experiments(X_dimred, name, n_seeds=10, use_cache=True, **kwargs):
     if 'sub_labels' in kwargs:
         columns.append('n_subcluster')
 
+    if 'cell_exp_ratio' in kwargs and kwargs['cell_exp_ratio']:
+        if not 'cell_labels' in kwargs:
+            err_exit('cell_labels')
+        columns.append('cell_exp_ratio')
+        
     if use_cache:
         mkdir_p('data/cache/{}'.format(name))
 
     mkdir_p('target/experiments')
         
-    of = open('target/experiments/{}.txt.19'.format(name), 'a')
+    of = open('target/experiments/{}.txt.23'.format(name), 'a')
     of.write('\t'.join(columns) + '\n')
 
     if 'Ns' in kwargs and kwargs['Ns'] is not None:
@@ -297,15 +309,11 @@ def experiments(X_dimred, name, n_seeds=10, use_cache=True, **kwargs):
         for scale in [ 0.02, 0.04, 0.06, 0.08, 0.1 ]:
             Ns.append(int(scale * X_dimred.shape[0]))
         Ns = np.array(Ns)
-        #while max(Ns) > 33300:
-        #    Ns = Ns / 2.
         Ns = [ int(N) for N in Ns ]
-
-    #Ns = [ 1000, 2000, 3000, 4000 ]
 
     sampling_fns = [
         uniform,
-        gs_gap,
+        #gs_gap,
         gs_gap,
         kmeanspp,
         srs,
@@ -320,7 +328,7 @@ def experiments(X_dimred, name, n_seeds=10, use_cache=True, **kwargs):
     
     sampling_fn_names = [
         'uniform',
-        'gs_gap',
+        #'gs_gap',
         'gs_gap_N',
         'kmeans++',
         'srs',
@@ -425,6 +433,7 @@ def experiments(X_dimred, name, n_seeds=10, use_cache=True, **kwargs):
                     kwargs['N'] = N
                     kwargs['seed'] = seed
                     kwargs['time'] = t1 - t0
+                    kwargs['use_cache'] = True
                     
                     experiment_stats(of, X_dimred, samp_idx, name, **kwargs)
 
@@ -471,16 +480,44 @@ def experiment_stats(of, X_dimred, samp_idx, name, **kwargs):
         stats.append(scipy.stats.entropy(cluster_hist, expected))
 
     if 'max_min_dist' in kwargs and kwargs['max_min_dist']:
-        min_dist = []
-        batch_size = 20000
-        for batch in range(0, X_dimred.shape[0], batch_size):
-            dist = pairwise_distances(
-                X_dimred[samp_idx, :], X_dimred[batch:batch + batch_size],
-                n_jobs=-1
-            )
-            min_dist += list(dist.min(0))
-            del dist
-        stats.append(max(min_dist))
+        N = kwargs['N']
+        seed = kwargs['seed']
+        use_cache = kwargs['use_cache']
+        
+        if use_cache:
+            min_dist = load_cached_idx('min_dist_' + kwargs['sampling_fn'],
+                                       name, N, seed, dtype=float)
+        else:
+            min_dist = []
+    
+        if min_dist is None or len(min_dist) == 0:
+            min_dist = []
+            batch_size = 20000
+            for batch in range(0, X_dimred.shape[0], batch_size):
+                dist = pairwise_distances(
+                    X_dimred[samp_idx, :], X_dimred[batch:batch + batch_size],
+                    n_jobs=-1
+                )
+                min_dist += list(dist.min(0))
+                del dist
+            if use_cache:
+                save_cached_idx(min_dist, 'min_dist_' + kwargs['sampling_fn'],
+                                name, N, seed, dtype=float)
+
+        #plt.figure()
+        #sns.violinplot(data=[ min_dist ], scale='width', cut=0)
+        #sns.stripplot(data=[ min_dist ], jitter=True, color='black', size=1)
+        #plt.savefig('max_min_dist.png')
+        #exit()
+
+        if name == 'mouse_brain':
+            stats.append(sorted(min_dist)[-5])
+        else:
+            stats.append(max(min_dist))
+        stats.append(np.quantile(min_dist, 0.9999))
+        stats.append(np.quantile(min_dist, 0.999))
+        stats.append(np.percentile(min_dist, 99))
+        stats.append(np.percentile(min_dist, 95))
 
     if 'kmeans_nmi' in kwargs and kwargs['kmeans_nmi']:
         cell_labels = kwargs['cell_labels']
@@ -548,192 +585,88 @@ def experiment_stats(of, X_dimred, samp_idx, name, **kwargs):
         sub_labels = kwargs['sub_labels']
         stats.append(len(set(sub_labels[samp_idx])))
         
+    if 'cell_exp_ratio' in kwargs and kwargs['cell_exp_ratio']:
+        cell_labels = kwargs['cell_labels']
+        n_samples = float(X_dimred.shape[0])
+        N = float(kwargs['N'])
+        
+        samp_idx_set = set(samp_idx)
+        cell_count = {}
+        samp_count = {}
+        for idx, cell_label in enumerate(cell_labels):
+            if cell_label not in cell_count:
+                cell_count[cell_label] = 0
+                samp_count[cell_label] = 0
+            cell_count[cell_label] += 1
+            if idx in samp_idx_set:
+                samp_count[cell_label] += 1
+                
+        cell_labels_sorted = [
+            x[1] for x in sorted([
+                (cell_count[cell_label], cell_label)
+                for cell_label in cell_count ])
+        ]
+        n_include = math.ceil(float(len(cell_count)) / 2.)
+        include_labels = set(cell_labels_sorted[:n_include])
+
+        cluster_ratios = []
+        for cell_label in cell_count:
+            if cell_label not in include_labels:
+                continue
+            observed = float(samp_count[cell_label])
+            expected = float(cell_count[cell_label]) * (N / n_samples)
+            cluster_ratios.append(observed / expected)                
+                
+        stats.append(scipy.stats.mstats.gmean(cluster_ratios))
+        
     of.write('\t'.join([ str(stat) for stat in stats ]) + '\n')
     of.flush()
-    
-def seurat_cluster(name):
-    rcode = Popen('Rscript R/seurat.R {0} > {0}.log 2>&1'
-                  .format(name), shell=True).wait()
-    if rcode != 0:
-        sys.stderr.write('ERROR: subprocess returned error code {}\n'
-                         .format(rcode))
-        exit(rcode)
 
-    labels = []
-    with open(name + '_labels.txt') as f:
-        f.readline()
-        for line in f:
-            labels.append(line.rstrip().split()[1])
-    return labels
-
-def experiment_seurat_ari(data_names, namespace):
-    datasets, genes_list, n_cells = load_names(data_names, norm=False)
-    datasets, genes = merge_datasets(datasets, genes_list)
-    X = vstack(datasets)
-    X_dimred = reduce_dimensionality(normalize(X))
-
-    name = 'data/{}'.format(namespace)
-    Ns = [ 500, 1000, 2000, 5000, 10000 ]
-    
-    if not os.path.isfile('{}/matrix.mtx'.format(name)):
-        save_mtx(name, csr_matrix(X), genes)
-    log('Seurat clustering full dataset...')
-    cluster_labels_full = seurat_cluster(name)
-    log('Seurat clustering done.')
-
-    for N in Ns:
-        gs_idx = gs(X_dimred, N)
-        save_mtx(name + '/gs{}'.format(N), csr_matrix(X[gs_idx, :]),
-                 genes)
-        log('Seurat clustering GS N = {}...'.format(N))
-        seurat_labels = seurat_cluster(name + '/gs{}'.format(N))
-        log('Seurat clustering GS N = {} done.'.format(N))
-        cluster_labels = label_approx(
-            X_dimred, X_dimred[gs_idx], seurat_labels
-        )
-        log('N = {}, GS ARI = {}'.format(
-            N, adjusted_rand_score(cluster_labels_full, cluster_labels)
-        ))
-        
-        uni_idx = uniform(X_dimred, N)
-        save_mtx(name + '/uni{}'.format(N), csr_matrix(X[uni_idx, :]),
-                 genes)
-        log('Seurat clustering uniform N = {}...'.format(N))
-        seurat_labels = seurat_cluster(name + '/uni{}'.format(N))
-        log('Seurat clustering uniform N = {} done.'.format(N))
-        cluster_labels = label_approx(
-            X_dimred, X_dimred[uni_idx], seurat_labels
-        )
-        log('N = {}, Uniform ARI = {}'.format(
-            N, adjusted_rand_score(cluster_labels_full, cluster_labels)
-        ))
-
-def experiment_kmeans_ce(X, name, cell_labels, n_seeds=10, N=None):
-    
+def plot_rare(X_dimred, cell_labels, rare_label, namespace,
+              use_cache=True, n_seeds=10):
     sampling_fns = [
         uniform,
-        gs,
         gs_gap,
-        srs,
-        louvain1,
-        louvain3,
         kmeanspp,
-        kmeansppp,
+        srs,
     ]
-    
     sampling_fn_names = [
         'uniform',
-        'gs_grid',
-        'gs_gap',
-        'srs',
-        'louvain1',
-        'louvain3',
+        'gs_gap_N',
         'kmeans++',
-        'kmeans+++',
-    ]
-
-    of = open('target/experiments/kmeans_ce/{}.txt'.format(name), 'a')
-
-    columns = [ 'name', 'sampling_fn', 'replace', 'N', 'k', 'seed',
-                'clust_eff' ]
-    of.write('\t'.join(columns) + '\n')
-
-    if N is None:
-        N = int(X.shape[0] / 100)
-
-    ks = [ 5, 10, 20, 50, int(np.sqrt(X.shape[0])) ]
-
-    for s_idx, sampling_fn in enumerate(sampling_fns):
-
-        for k in ks:
-            
-            if k > N:
-                continue
-
-            for seed in range(n_seeds):
-                
-                samp_idx = sampling_fn(X, N, seed=seed)
-    
-                km = KMeans(n_clusters=k, n_init=1, random_state=seed)
-                km.fit(X[samp_idx, :])
-
-                full_labels = label_approx(X, X[samp_idx, :], km.labels_)
-                
-                avg_ce = average_cluster_efficiency(
-                    cell_labels, full_labels
-                )
-    
-                stats = [
-                    name, sampling_fn_names[s_idx], False, N, k, seed, avg_ce
-                ]
-                
-                of.write('\t'.join([ str(stat) for stat in stats ]) + '\n')
-                of.flush()
-
-    of.close()
-
-def experiment_louvain_ce(X, name, cell_labels, n_seeds=10, N=None):
-    sampling_fns = [
-        uniform,
-        gs,
-        gs_gap,
-        srs,
-        louvain1,
-        louvain3,
-        kmeanspp,
-        kmeansppp,
-    ]
-    
-    sampling_fn_names = [
-        'uniform',
-        'gs_grid',
-        'gs_gap',
         'srs',
-        'louvain1',
-        'louvain3',
-        'kmeans++',
-        'kmeans+++',
     ]
 
-    of = open('target/experiments/louvain_ce/{}.txt'.format(name), 'a')
+    stats = pd.DataFrame(columns=[ 'name', 'kl_divergence', 'seed' ])
 
-    columns = [ 'name', 'sampling_fn', 'replace', 'N', 'resolution', 'seed',
-                'k', 'clust_eff' ]
-    of.write('\t'.join(columns) + '\n')
+    N = int(0.02 * X_dimred.shape[0])
     
-    if N is None:
-        N = int(X.shape[0] / 100)
-
-    resolutions = [ 0.1, 0.5, 1, 2, 3, 5 ]
-
     for s_idx, sampling_fn in enumerate(sampling_fns):
+        name = sampling_fn_names[s_idx]
+        for seed in range(10, 10 + n_seeds):
+            if use_cache:
+                samp_idx = load_cached_idx(sampling_fn_names[s_idx],
+                                           name, N, seed)
+            else:
+                samp_idx = None
+            if samp_idx is None:
+                if name == 'gs_gap_N':
+                    samp_idx = sampling_fn(X_dimred, N, k=N)
+                else:
+                    samp_idx = sampling_fn(X_dimred, N)
+            cluster_labels = cell_labels[samp_idx]
+            stats = stats.append({
+                'name': name,
+                'rare': sum(cluster_labels == rare_label),
+                'seed': seed,
+            }, ignore_index=True)
 
-        for seed in range(n_seeds):
-                
-            samp_idx = sampling_fn(X, N, seed=seed)
+    plt.figure()
+    sns.barplot(x='name', y='rare', data=stats,
+                order=sorted(sampling_fn_names),
+                palette=[ '#377eb8', '#ff7f00', '#4daf4a', '#f781bf' ])
+    plt.savefig('rare_barplot_{}.svg'.format(namespace))
     
-            for resolution in resolutions:
-            
-                adata = AnnData(X=X[samp_idx, :])
-                sc.pp.neighbors(adata, use_rep='X')
-                sc.tl.louvain(adata, resolution=resolution, key_added='louvain')
-                louv_labels = np.array(adata.obs['louvain'].tolist())
-
-                full_labels = label_approx(X, X[samp_idx, :], louv_labels)
-                
-                avg_ce = average_cluster_efficiency(
-                    cell_labels, full_labels
-                )
-    
-                stats = [
-                    name, sampling_fn_names[s_idx], False, N, resolution, seed,
-                    max(louv_labels), avg_ce
-                ]
-                
-                of.write('\t'.join([ str(stat) for stat in stats ]) + '\n')
-                of.flush()
-
-    of.close()
     
 def save_sketch(X, samp_idx, genes, namespace):
     name = 'data/{}'.format(namespace)

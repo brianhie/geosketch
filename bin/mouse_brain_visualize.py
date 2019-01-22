@@ -58,37 +58,29 @@ if __name__ == '__main__':
     cell_names = sorted(set(labels))
     cell_labels = le.transform(labels)
 
-    #experiment_gs(
-    #    X_dimred, NAMESPACE, cell_labels=cell_labels,
-    #    viz_type='tsne', N_only=20000, kmeans=False, visualize_orig=False
-    #)
-    #experiment_uni(
-    #    X_dimred, NAMESPACE, cell_labels=cell_labels,
-    #    viz_type='tsne', N_only=20000, kmeans=False, visualize_orig=False
-    #)
-    #experiment_srs(
-    #    X_dimred, NAMESPACE, cell_labels=cell_labels,
-    #    viz_type='tsne', N_only=20000, kmeans=False, visualize_orig=False
-    #)
-    #experiment_kmeanspp(
-    #    X_dimred, NAMESPACE, cell_labels=cell_labels,
-    #    viz_type='tsne', N_only=20000, kmeans=False, visualize_orig=False
-    #)
+    viz_genes = [
+        'Slc1a3', 'Gad1', 'Lgi2', 'Calb1',
+    ]
     
     experiment_gs(
         X_dimred, NAMESPACE, cell_labels=cell_labels,
-        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
+        viz_type='umap', N_only=int(0.02 * X.shape[0]),
+        gene_names=viz_genes, genes=genes, gene_expr=X,
+        kmeans=False, visualize_orig=False
     )
+    exit()
     experiment_uni(
         X_dimred, NAMESPACE, cell_labels=cell_labels,
-        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
+        viz_type='umap', N_only=int(0.02 * X.shape[0]),
+        kmeans=False, visualize_orig=False
     )
     experiment_srs(
         X_dimred, NAMESPACE, cell_labels=cell_labels,
-        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
+        viz_type='umap', N_only=int(0.02 * X.shape[0]),
+        kmeans=False, visualize_orig=False
     )
     experiment_kmeanspp(
         X_dimred, NAMESPACE, cell_labels=cell_labels,
-        viz_type='umap', N_only=20000, kmeans=False, visualize_orig=False
+        viz_type='umap', N_only=int(0.02 * X.shape[0]),
+        kmeans=False, visualize_orig=False
     )
-

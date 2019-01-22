@@ -41,19 +41,15 @@ if __name__ == '__main__':
     experiments(
         X_dimred, NAMESPACE,
         cell_labels=cell_labels,
-        spectral_nmi=True, louvain_ami=True,
-        rare=True,
-        rare_label=le.transform(['293t'])[0],
-        max_min_dist=True,
+        cell_exp_ratio=True,
+        #spectral_nmi=True, louvain_ami=True,
+        #rare=True,
+        #rare_label=le.transform(['293t'])[0],
+        #max_min_dist=True,
     )
     exit()
 
     from differential_entropies import differential_entropies
     differential_entropies(X_dimred, labels)
     
-    experiment_kmeans_ce(X_dimred, NAMESPACE, cell_labels, n_seeds=10, N=100)
-    experiment_louvain_ce(X_dimred, NAMESPACE, cell_labels, n_seeds=10, N=100)
-
-    rare(X_dimred, NAMESPACE, cell_labels, le.transform(['293t'])[0])
-    
-    balance(X_dimred, NAMESPACE, cell_labels)
+    plot_rare(X_dimred, cell_labels, le.transform(['293t'])[0], NAMESPACE)

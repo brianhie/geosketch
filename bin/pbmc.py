@@ -61,12 +61,15 @@ if __name__ == '__main__':
     experiments(
         X_dimred, NAMESPACE,
         cell_labels=cell_labels,
-        spectral_nmi=True, louvain_ami=True,
-        rare=True,
-        rare_label=le.transform(['Dendritic'])[0],
-        max_min_dist=True
+        cell_exp_ratio=True,
+        #spectral_nmi=True, louvain_ami=True,
+        #rare=True,
+        #rare_label=le.transform(['Dendritic'])[0],
+        #max_min_dist=True
     )
     exit()
+    
+    plot_rare(X_dimred, cell_labels, le.transform(['Dendritic'])[0], NAMESPACE)
     
     experiment_gs(
         X_dimred, NAMESPACE, cell_labels=cell_labels,

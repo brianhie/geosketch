@@ -103,19 +103,21 @@ if __name__ == '__main__':
     experiments(
         X_dimred, NAMESPACE, n_seeds=4,
         cell_labels=cell_labels,
-        louvain_ami=True,
-        spectral_nmi=True,
-        rare=True,
-        rare_label=le.transform(['Macrophage'])[0],
-        max_min_dist=True,
+        cell_exp_ratio=True,
+        #louvain_ami=True,
+        #rare=True,
+        #rare_label=le.transform(['Macrophage'])[0],
+        #max_min_dist=True,
     )
     exit()
-
+    
     report_cluster_counts(labels)
     
     from differential_entropies import differential_entropies
     differential_entropies(X_dimred, labels)
     
+    plot_rare(X_dimred, cell_labels, le.transform(['Macrophage'])[0],
+              NAMESPACE, n_seeds=4)
     from geosketch import gs
     samp_idx = gs(X_dimred, 1000, replace=False)
     save_sketch(X, samp_idx, genes, NAMESPACE + '1000')
