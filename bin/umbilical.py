@@ -71,7 +71,7 @@ def violin_jitter(X, genes, gene, labels, focus, background=None,
     sns.violinplot(data=[ x_focus, x_background ], scale='width', cut=0)
     sns.stripplot(data=[ x_focus, x_background ], jitter=True, color='black', size=1)
     plt.xticks([0, 1], xlabels)
-    plt.savefig('{}_violin_{}.svg'.format(NAMESPACE, gene))
+    plt.savefig('{}_violin_{}.png'.format(NAMESPACE, gene))
     
 if __name__ == '__main__':
     datasets, genes_list, n_cells = load_names(data_names, norm=False)
@@ -93,9 +93,9 @@ if __name__ == '__main__':
         viz_genes = [
             'CD74', 'JUNB', 'B2M',
             'CD14', 'CD68',
-            'PF4',
-            'HBB',
-            'CD19',
+            #'PF4',
+            #'HBB',
+            #'CD19',
         ]
 
         from geosketch import gs, uniform
@@ -111,19 +111,39 @@ if __name__ == '__main__':
 
         X_samp = X[samp_idx].tocsc()
         
-        sc.tl.umap(adata)
-        embedding = np.array(adata.obsm['X_umap'])
-        visualize(
-            None, cell_labels,
-            name + '_umap_louvain',
-            [ str(ct) for ct in sorted(set(louv_labels)) ],
-            gene_names=viz_genes, gene_expr=X_samp, genes=genes,
-            embedding=embedding, image_suffix='.png',
-            viz_cluster=True
-        )
-        exit()
-        visualize_dropout(X_samp, embedding, image_suffix='.png',
-                          viz_prefix=name + '_umap_louvain_dropout')
+        #sc.tl.umap(adata)
+        #umap_embedding = np.array(adata.obsm['X_umap'])
+        #visualize(
+        #    None, cell_labels, name + '_umap_louvain',
+        #    [ str(ct) for ct in sorted(set(louv_labels)) ],
+        #    gene_names=viz_genes, gene_expr=X_samp, genes=genes,
+        #    embedding=umap_embedding, image_suffix='.png',
+        #    viz_cluster=True
+        #)
+
+        cache_fname = 'data/embedding/umbilical_tsne.txt'
+        if os.path.isfile(cache_fname):
+            tsne_embedding = np.loadtxt(cache_fname)
+            visualize(
+                None, cell_labels, name + '_louvain',
+                [ str(ct) for ct in sorted(set(louv_labels)) ],
+                gene_names=viz_genes, gene_expr=X_samp, genes=genes,
+                embedding=tsne_embedding, size=5,
+                image_suffix='.png', #viz_cluster=True
+            )
+        else:
+            tsne_embedding = visualize(
+                [ X_dimred[samp_idx] ], cell_labels, name + '_louvain',
+                [ str(ct) for ct in sorted(set(louv_labels)) ],
+                gene_names=viz_genes, gene_expr=X_samp, genes=genes,
+                size=5, image_suffix='.png', #viz_cluster=True
+            )
+            np.savetxt(cache_fname, tsne_embedding)
+
+        #visualize_dropout(X_samp, umap_embedding, image_suffix='.png',
+        #                  viz_prefix=name + '_umap_louvain_dropout')
+        visualize_dropout(X_samp, tsne_embedding, image_suffix='.png',
+                          viz_prefix=name + '_louvain_dropout')
         
         clusterA = set([ 20 ])
         clusterB = set([ 12 ])
@@ -144,6 +164,7 @@ if __name__ == '__main__':
         violin_jitter(X_samp, genes, 'CD74', labels, 0, 1, xlabels)
         violin_jitter(X_samp, genes, 'B2M', labels, 0, 1, xlabels)
         violin_jitter(X_samp, genes, 'JUNB', labels, 0, 1, xlabels)
+        violin_jitter(X_samp, genes, 'HLA-DRA', labels, 0, 1, xlabels)
         
         auroc(X_samp, genes, np.array(labels), 0, background=1)
         

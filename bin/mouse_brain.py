@@ -82,8 +82,8 @@ if __name__ == '__main__':
     viz_genes = [
         'Nptxr', 'Calb1', 'Adora2a', 'Drd1', 'Nefm', 'C1ql2', 'Cck',
         'Rorb', 'Deptor', 'Gabra6',
-        #'Slc1a3', 'Gad1', 'Gad2', 'Slc17a6', 'Slc17a7', 'Th',
-        #'Pcp2', 'Sln', 'Lgi2'
+        'Slc1a3', 'Gad1', 'Gad2', 'Slc17a6', 'Slc17a7', 'Th',
+        'Pcp2', 'Sln', 'Lgi2'
         #'Gja1', 'Flt1', 'Gabra6', 'Syt1', 'Gabrb2', 'Gabra1',
         #'Meg3', 'Mbp', 'Rgs5', 'Pcp2', 'Dcn', 'Pvalb', 'Nnat',
         #'C1qb', 'Acta2', 'Syt6', 'Lhx1', 'Sox4', 'Tshz2', 'Cplx3',
@@ -107,7 +107,7 @@ if __name__ == '__main__':
         #louvain_ami=True,
         #rare=True,
         #rare_label=le.transform(['Macrophage'])[0],
-        #max_min_dist=True,
+        max_min_dist=True,
     )
     exit()
     

@@ -6,6 +6,7 @@ from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import normalize
 from subprocess import Popen
+import sys
 from time import time
 
 from utils import log, mkdir_p

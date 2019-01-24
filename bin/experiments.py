@@ -299,7 +299,7 @@ def experiments(X_dimred, name, n_seeds=10, use_cache=True, **kwargs):
 
     mkdir_p('target/experiments')
         
-    of = open('target/experiments/{}.txt.23'.format(name), 'a')
+    of = open('target/experiments/{}.txt.22'.format(name), 'a')
     of.write('\t'.join(columns) + '\n')
 
     if 'Ns' in kwargs and kwargs['Ns'] is not None:
@@ -312,32 +312,32 @@ def experiments(X_dimred, name, n_seeds=10, use_cache=True, **kwargs):
         Ns = [ int(N) for N in Ns ]
 
     sampling_fns = [
-        uniform,
+        #uniform,
         #gs_gap,
-        gs_gap,
-        kmeanspp,
-        srs,
+        #gs_gap,
+        #kmeanspp,
+        #srs,
         #pc_pick,
         #srs_positive,
         #gs_grid,
-        #louvain1,
-        #louvain3,
-        #kmeans,
+        louvain1,
+        louvain3,
+        kmeans,
         #kmeansppp,
     ]
     
     sampling_fn_names = [
-        'uniform',
+        #'uniform',
         #'gs_gap',
-        'gs_gap_N',
-        'kmeans++',
-        'srs',
+        #'gs_gap_N',
+        #'kmeans++',
+        #'srs',
         #'pc_pick',
         #'srs_positive',
         #'gs_grid',
-        #'louvain1',
-        #'louvain3',
-        #'kmeans',
+        'louvain1',
+        'louvain3',
+        'kmeans',
         #'kmeans+++',
     ]
 

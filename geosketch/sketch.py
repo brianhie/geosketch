@@ -11,7 +11,39 @@ def gs(X, N, **kwargs):
     return gs_gap(X, N, **kwargs)
 
 def gs_gap(X, N, k='auto', seed=None, replace=False,
-           alpha=0.1, max_iter=200, verbose=0, labels=None):
+           alpha=0.1, max_iter=200, verbose=0,):
+    """Sample from a data set according to a geometric plaid covering.
+
+    Parameters
+    ----------
+    X : `numpy.ndarray`
+        Dense vector of low dimensional embeddings with rows corresponding
+        to observations and columns corresponding to feature embeddings.
+    N: `int`
+        Desired sketch size.
+    replace: `bool`, optional (default: False)
+        When `True`, draws samples with replacement from covering boxes.
+    k: `int` or `'auto'` (default: `'auto'`)
+        Number of covering boxes.
+        When `'auto'` and replace is `True`, draws sqrt(X.shape[0]) 
+        covering boxes.
+        When `'auto'` and replace is `False`, draws N covering boxes.
+    alpha: `float`
+        Binary search halts when it obtains between k * (1 - alpha) and
+        k * (1 + alpha) covering boxes.
+    seed: `int`, optional (default: None)
+        Random seed passed to numpy.
+    max_iter: `int`, optional (default: 200)
+        Maximum iterations at which to terminate binary seach in rare
+        case of non-monotonicity of covering boxes with box side length.
+    verbose: `bool` or `int`, optional (default: 2)
+        When `True` or not equal to 0, prints logging output.
+
+    Returns
+    -------
+    samp_idx
+        List of indices into X that make up the sketch.
+    """
     n_samples, n_features = X.shape
 
     # Error checking and initialization.
@@ -23,15 +55,27 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
     if not replace and N == n_samples:
         return range(N)
     if k == 'auto':
-        k = int(np.sqrt(n_samples))
+        if replace:
+            k = int(np.sqrt(n_samples))
+        else:
+            k = N
+    if k < 1:
+        raise ValueError('Cannot draw {} covering boxes.'.format(k))
 
+    # Tranlate to make data all positive.
+    # Note: `-=' operator mutates variable outside of method.
     X = X - X.min(0)
+
+    # Scale so that maximum value equals 1.
     X /= X.max()
 
+    # Find max value along each dimension.
     X_ptp = X.ptp(0)
 
+    # Range for binary search.
     low_unit, high_unit = 0., max(X_ptp)
-    
+
+    # Initialize box length.
     unit = (low_unit + high_unit) / 4.
 
     d_to_argsort = {}
@@ -44,6 +88,7 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
 
         grid_table = np.zeros((n_samples, n_features))
 
+        # Assign points to intervals within each dimension.
         for d in range(n_features):
             if X_ptp[d] <= unit:
                 continue
@@ -60,14 +105,13 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
                     curr_interval += 1
                 grid_table[sample_idx, d] = curr_interval
 
+        # Store as map from grid cells to point indices.
         grid = {}
-
         for sample_idx in range(n_samples):
             grid_cell = tuple(grid_table[sample_idx, :])
             if grid_cell not in grid:
                 grid[grid_cell] = []
             grid[grid_cell].append(sample_idx)
-
         del grid_table
 
         if verbose:
@@ -85,7 +129,7 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
                 log('Grid size {}, increase unit to {}'
                     .format(len(grid), unit))
 
-        elif len(grid) < k / (1 + alpha):
+        elif len(grid) < k * (1 - alpha):
             # Too few grid cells, decrease unit.
             high_unit = unit
             if low_unit is None:
@@ -103,16 +147,17 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
            high_unit - low_unit < 1e-20:
             break
         
+        n_iter += 1
         if n_iter >= max_iter:
             # Should rarely get here.
             sys.stderr.write('WARNING: Max iterations reached, try increasing '
                              ' alpha parameter.\n')
             break
-        n_iter += 1
 
     if verbose:
         log('Found {} grid cells'.format(len(grid)))
 
+    # Sample grid cell, then sample point within cell.
     valid_grids = set()
     gs_idx = []
     for n in range(N):

@@ -42,14 +42,6 @@ if __name__ == '__main__':
     print('Found {} valid cells among all datasets'.format(len(qc_idx)))
     X = X[qc_idx]
     
-    import time
-    t0 = time.time()
-    k = DIMRED
-    U, s, Vt = pca(normalize(X), k=k)
-    X_dimred = U[:, :k] * s[:k]
-    print(time.time() - t0)
-    exit()
-    
     if not os.path.isfile('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE)):
         log('Dimension reduction with {}...'.format(METHOD))
         X_dimred = reduce_dimensionality(

@@ -20,6 +20,11 @@ def parse_stats(fname):
                 samp_fns[('_namespace', None)] = fields[0]
             
             samp_fn = fields[1]
+            if samp_fn == 'gs_gap_N':
+                samp_fn = 'a_' + samp_fn
+            if samp_fn == 'uniform':
+                samp_fn = 'b_' + samp_fn
+            
             replace = fields[2] == 'True'
             if (samp_fn, replace) not in samp_fns:
                 samp_fns[(samp_fn, replace)] = {}
@@ -51,9 +56,12 @@ def plot_stats(stat, samp_fns=None, fname=None, dtype=float,
         #'#aa6e28', '#800000', '#aaffc3',
         #'#808000', '#ffd8b1', '#000080',
         #'#808080', '#fabebe', '#a3f4ff'
-        '#377eb8', '#ff7f00', '#4daf4a',
+
+         '#ff7f00', '#f781bf', '#4c4c4c', '#377eb8',
+        
+        '#377eb8', '#ff7f00', #'#4daf4a',
         #'#984ea3',
-        '#f781bf', '#a65628', '#984ea3',
+        '#f781bf', '#4c4c4c', '#a65628', '#984ea3',
         '#999999', '#e41a1c', '#dede00',
         '#ffe119', '#e6194b', '#ffbea3',
         '#911eb4', '#46f0f0', '#f032e6',
@@ -68,7 +76,7 @@ def plot_stats(stat, samp_fns=None, fname=None, dtype=float,
     c_idx = 0
     
     for s_idx, (samp_fn, replace) in enumerate(
-            sorted(samp_fns, key=lambda x: '{}_{}'.format(*x))):
+            sorted(samp_fns, key=lambda x: '{}_{}'.format(*x))[::-1]):
 
         if samp_fn.startswith('_'):
             continue
@@ -99,7 +107,7 @@ def plot_stats(stat, samp_fns=None, fname=None, dtype=float,
 
         label = '{}_{}'.format(samp_fn, replace)
 
-        plt.plot(Ns, means, color=colors[c_idx], label=label)
+        plt.plot(Ns, means, color=colors[c_idx], label=label, linewidth=4.)
         plt.scatter(Ns, means, color=colors[c_idx])
         plt.fill_between(Ns, means - sems, means + sems, alpha=0.3,
                          color=colors[c_idx])
@@ -121,8 +129,8 @@ def plot_stats(stat, samp_fns=None, fname=None, dtype=float,
 if __name__ == '__main__':
     only_fns = set([
         'gs_gap_k',
-        'gs_gap_N',
-        'uniform',
+        'a_gs_gap_N',
+        'b_uniform',
         #'gs_grid',
         #'gs_gap',
         'srs',

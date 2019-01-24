@@ -59,19 +59,43 @@ if __name__ == '__main__':
     cell_labels = le.transform(labels)
 
     viz_genes = [
-        'Slc1a3', 'Gad1', 'Lgi2', 'Calb1',
+        'Nptxr', 'Calb1', 'Adora2a', 'Drd1', 'Nefm', 'C1ql2', 'Cck',
+        'Rorb', 'Deptor', 'Gabra6',
+        'Slc1a3', 'Gad1', 'Gad2', 'Slc17a6', 'Slc17a7', 'Th',
+        'Pcp2', 'Sln', 'Lgi2'
     ]
     
+    experiment_uni(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        viz_type='tsne', N_only=int(0.02 * X.shape[0]),
+        kmeans=False, visualize_orig=False
+    )
     experiment_gs(
         X_dimred, NAMESPACE, cell_labels=cell_labels,
-        viz_type='umap', N_only=int(0.02 * X.shape[0]),
-        gene_names=viz_genes, genes=genes, gene_expr=X,
+        viz_type='tsne', N_only=int(0.02 * X.shape[0]),
+        kmeans=False, visualize_orig=False
+    )
+    experiment_srs(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        viz_type='tsne', N_only=int(0.02 * X.shape[0]),
+        kmeans=False, visualize_orig=False
+    )
+    experiment_kmeanspp(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        viz_type='tsne', N_only=int(0.02 * X.shape[0]),
         kmeans=False, visualize_orig=False
     )
     exit()
     experiment_uni(
         X_dimred, NAMESPACE, cell_labels=cell_labels,
         viz_type='umap', N_only=int(0.02 * X.shape[0]),
+        gene_names=viz_genes, genes=genes, gene_expr=X,
+        kmeans=False, visualize_orig=False
+    )
+    experiment_gs(
+        X_dimred, NAMESPACE, cell_labels=cell_labels,
+        viz_type='umap', N_only=int(0.02 * X.shape[0]),
+        gene_names=viz_genes, genes=genes, gene_expr=X,
         kmeans=False, visualize_orig=False
     )
     experiment_srs(
