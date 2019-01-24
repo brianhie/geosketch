@@ -13,6 +13,8 @@ pip install geosketch
 
 ## API example usage
 
+**Parameter documentation for the geometric sketching `gs()` function is in the source code at the top of [`geosketch/sketch.py`](geosketch/sketch.py).**
+
 Here is example usage of `geosketch` in Python. First, put your data set into a matrix:
 ```
 X = [ sparse or dense matrix, samples in rows, features in columns ]
