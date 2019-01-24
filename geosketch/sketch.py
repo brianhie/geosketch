@@ -8,6 +8,10 @@ from .kmeanspp import kmeanspp
 from .utils import log
 
 def gs(X, N, **kwargs):
+    """Geometric sketching.
+       Wrapper around `gs_gap()`, see parameter documentation in that
+       function.
+    """
     return gs_gap(X, N, **kwargs)
 
 def gs_gap(X, N, k='auto', seed=None, replace=False,
@@ -29,14 +33,14 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
         covering boxes.
         When `'auto'` and replace is `False`, draws N covering boxes.
     alpha: `float`
-        Binary search halts when it obtains between k * (1 - alpha) and
-        k * (1 + alpha) covering boxes.
+        Binary search halts when it obtains between `k * (1 - alpha)` and
+        `k * (1 + alpha)` covering boxes.
     seed: `int`, optional (default: None)
         Random seed passed to numpy.
     max_iter: `int`, optional (default: 200)
         Maximum iterations at which to terminate binary seach in rare
         case of non-monotonicity of covering boxes with box side length.
-    verbose: `bool` or `int`, optional (default: 2)
+    verbose: `bool` or `int`, optional (default: 0)
         When `True` or not equal to 0, prints logging output.
 
     Returns
