@@ -44,8 +44,8 @@ for method in data.keys():
              .replace('uniform', 'Uniform')
              .replace('_', ' + '))
 
-    #if not 'harmony' in method and method != 'uncorrected':
-    #    continue
+    if not 'harmony' in method and method != 'uncorrected':
+        continue
         
     plt.plot(ks, data[method], label=label)
     plt.scatter(ks, data[method])

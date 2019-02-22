@@ -57,13 +57,13 @@ def plot_stats(stat, samp_fns=None, fname=None, dtype=float,
         #'#808000', '#ffd8b1', '#000080',
         #'#808080', '#fabebe', '#a3f4ff'
 
-         '#ff7f00', '#f781bf', '#4c4c4c', '#377eb8',
+         '#ff7f00', #'#f781bf', '#4c4c4c', 
         
-        '#377eb8', '#ff7f00', #'#4daf4a',
+        #'#377eb8', '#ff7f00', #'#4daf4a',
         #'#984ea3',
-        '#f781bf', '#4c4c4c', '#a65628', '#984ea3',
-        '#999999', '#e41a1c', '#dede00',
-        '#ffe119', '#e6194b', '#ffbea3',
+        #'#f781bf', '#4c4c4c', '#a65628', '#984ea3',
+        #'#999999', '#e41a1c', '#dede00',
+        '#ffe119', '#e6194b', '#377eb8','#ffbea3',
         '#911eb4', '#46f0f0', '#f032e6',
         '#d2f53c', '#008080', '#e6beff',
         '#aa6e28', '#800000', '#aaffc3',
@@ -122,23 +122,24 @@ def plot_stats(stat, samp_fns=None, fname=None, dtype=float,
     plt.title(title)
     plt.xlabel('Sample size')
     plt.ylabel(stat)
+    plt.yscale('log')
     plt.legend()
     mkdir_p('target/stats_plots')
     plt.savefig('target/stats_plots/{}.svg'.format(title))
     
 if __name__ == '__main__':
     only_fns = set([
-        'gs_gap_k',
+        #'gs_gap_k',
         'a_gs_gap_N',
-        'b_uniform',
+        #'b_uniform',
         #'gs_grid',
         #'gs_gap',
-        'srs',
+        #'srs',
         #'pc_pick',
-        #'louvain1',
-        #'louvain3',
+        'louvain1',
+        'louvain3',
+        #'kmeans++',
         'kmeans++',
-        #'kmeans+++',
     ])
     
     plot_stats(sys.argv[1], fname=sys.argv[2],

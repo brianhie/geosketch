@@ -6,6 +6,7 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import normalize, LabelEncoder
 
+from geosketch import *
 from experiments import *
 from process import load_names
 from utils import *
@@ -102,8 +103,8 @@ if __name__ == '__main__':
 
     experiments(
         X_dimred, NAMESPACE, n_seeds=4,
-        cell_labels=cell_labels,
-        cell_exp_ratio=True,
+        #cell_labels=cell_labels,
+        #cell_exp_ratio=True,
         #louvain_ami=True,
         #rare=True,
         #rare_label=le.transform(['Macrophage'])[0],

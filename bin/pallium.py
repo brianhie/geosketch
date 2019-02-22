@@ -30,6 +30,17 @@ if __name__ == '__main__':
     else:
         X_dimred = np.loadtxt('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE))
 
+    from geosketch import gs
+    samp_idx = gs(X_dimred, 1000, replace=False)
+    save_sketch(X, samp_idx, genes, NAMESPACE + '1000')
+    
+    for scale in [ 0.05, 0.025, 0.01 ]:
+        N = int(X.shape[0] * scale)
+        samp_idx = gs(X_dimred, N, replace=False)
+        save_sketch(X, samp_idx, genes, NAMESPACE + str(N))
+
+    exit()
+        
     viz_genes = [
         'GJA1', 'MBP',
         'PLP1', 'MAL', 'PTGDS', 'MAG', 'CLDN11', 'APOD', 'FTH1',
@@ -48,7 +59,6 @@ if __name__ == '__main__':
         gene_names=viz_genes, gene_expr=X_samp, genes=genes,
         perplexity=100, n_iter=500, image_suffix='.png'
     )
-    exit()
     
     from geosketch import gs
     samp_idx = gs(X_dimred, 1000, replace=False)
