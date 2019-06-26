@@ -8,8 +8,10 @@ from process import load_names
 NAMESPACE = 'polarized'
 
 data_names = [
+    'data/macrophage/gmcsf_day6_1',
     'data/macrophage/gmcsf_day6_2',
     'data/macrophage/mcsf_day6_1',
+    'data/macrophage/mcsf_day6_2',
 ]
 
 if __name__ == '__main__':

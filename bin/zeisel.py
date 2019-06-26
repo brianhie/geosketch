@@ -51,7 +51,7 @@ if __name__ == '__main__':
         np.savetxt('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE), X_dimred)
     else:
         X_dimred = np.loadtxt('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE))
-    
+
     labels = np.array(
         open('data/cell_labels/zeisel_cluster.txt')
         .read().rstrip().split('\n')
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     #louv_labels = np.array(adata.obs['louvain'].tolist())
     #le = LabelEncoder().fit(louv_labels)
     #louv_labels = le.transform(louv_labels)
-    
+
     experiments(
         X_dimred, NAMESPACE, n_seeds=4,
         cell_labels=cell_labels,

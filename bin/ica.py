@@ -67,9 +67,13 @@ def avg_norm_entropy(ds_labels, cluster_labels):
     return np.mean(Hs)
 
 if __name__ == '__main__':
-    datasets, genes_list, n_cells = load_names(data_names)
+    datasets, genes_list, n_cells = load_names(data_names, norm=False)
     datasets, genes = merge_datasets(datasets, genes_list)
     X = vstack(datasets)
+
+    gt_idx = [ i for i, s in enumerate(np.sum(X != 0, axis=1))
+               if s >= 500 ]
+    X = X[gt_idx]
 
     if not os.path.isfile('data/dimred/{}_{}.txt'.format(METHOD, NAMESPACE)):
         log('Dimension reduction with {}...'.format(METHOD))

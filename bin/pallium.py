@@ -16,7 +16,7 @@ data_names = [
 ]
 
 if __name__ == '__main__':
-    datasets, genes_list, n_cells = load_names(data_names)
+    datasets, genes_list, n_cells = load_names(data_names, norm=False)
     datasets, genes = merge_datasets(datasets, genes_list)
     X = vstack(datasets)
 
