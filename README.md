@@ -2,7 +2,7 @@
 
 ## Overview
 
-`geosketch` is a Python package that implements the geometric sketching algorithm described by Brian Hie, Hyunghoon Cho, Benjaming DeMeo, Bryan Bryson, and Bonnie Berger. ["Geometric sketching compactly summarizes the single-cell transcriptomic landscape". Cell Systems (2019).](https://www.cell.com/cell-systems/fulltext/S2405-4712\(19\)30152-8). This repository contains an example implementation of the algorithm as well as scripts necessary for reproducing the experiments in the paper.
+`geosketch` is a Python package that implements the geometric sketching algorithm described by [Brian Hie, Hyunghoon Cho, Benjaming DeMeo, Bryan Bryson, and Bonnie Berger in "Geometric sketching compactly summarizes the single-cell transcriptomic landscape", Cell Systems (2019)](https://www.cell.com/cell-systems/fulltext/S2405-4712\(19\)30152-8). This repository contains an example implementation of the algorithm as well as scripts necessary for reproducing the experiments in the paper.
 
 ## Installation
 
