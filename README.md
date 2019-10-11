@@ -11,6 +11,8 @@ You should be able to install from PyPI:
 pip install geosketch
 ```
 
+**For an example of usage of `geosketch` in R using the [`reticulate`](https://rstudio.github.io/reticulate/) library, see  [`example.R`](example.R).**
+
 ## API example usage
 
 **Parameter documentation for the geometric sketching `gs()` function is in the source code at the top of [`geosketch/sketch.py`](geosketch/sketch.py).**
