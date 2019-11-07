@@ -23,7 +23,7 @@ X = [ sparse or dense matrix, samples in rows, features in columns ]
 ```
 
 Then, compute the top PCs:
-```
+```Python
 # Compute PCs.
 from fbpca import pca
 U, s, Vt = pca(X, k=100) # E.g., 100 PCs.
@@ -31,7 +31,7 @@ X_dimred = U[:, :100] * s[:100]
 ```
 
 Now, you are ready to sketch!
-```
+```Python
 # Sketch.
 from geosketch import gs
 N = 20000 # Number of samples to obtain from the data set.
