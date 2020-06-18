@@ -11,11 +11,11 @@ You should be able to install from PyPI:
 pip install geosketch
 ```
 
-**For an example of usage of `geosketch` in R using the [`reticulate`](https://rstudio.github.io/reticulate/) library, see  [`example.R`](example.R). WARNING: The indices returned by `geosketch` are 0-indexed, but R uses 1 indexing.**
-
 ## API example usage
 
 **Parameter documentation for the geometric sketching `gs()` function is in the source code at the top of [`geosketch/sketch.py`](geosketch/sketch.py).**
+
+**For an example of usage of `geosketch` in R using the [`reticulate`](https://rstudio.github.io/reticulate/) library, see  [`example.R`](example.R). WARNING: The indices returned by `geosketch` are 0-indexed, but R uses 1-indexing, so the `one_indexed` parameter should be set to `TRUE` when called from R.**
 
 Here is example usage of `geosketch` in Python. First, put your data set into a matrix:
 ```
