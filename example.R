@@ -1,3 +1,7 @@
+# WARNING: Sketch indices returned by geosketch are 0-indexed but R
+# uses 1-indexing; indices should be shifted by 1 for any downstream
+# analysis!
+
 library(reticulate)
 library(rsvd)
 
