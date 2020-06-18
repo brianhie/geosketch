@@ -15,7 +15,7 @@ def gs(X, N, **kwargs):
     return gs_gap(X, N, **kwargs)
 
 def gs_gap(X, N, k='auto', seed=None, replace=False,
-           alpha=0.1, max_iter=200, verbose=0,):
+           alpha=0.1, max_iter=200, one_indexed=False, verbose=0,):
     """Sample from a data set according to a geometric plaid covering.
 
     Parameters
@@ -29,7 +29,7 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
         When `True`, draws samples with replacement from covering boxes.
     k: `int` or `'auto'` (default: `'auto'`)
         Number of covering boxes.
-        When `'auto'` and replace is `True`, draws sqrt(X.shape[0]) 
+        When `'auto'` and replace is `True`, draws sqrt(X.shape[0])
         covering boxes.
         When `'auto'` and replace is `False`, draws N covering boxes.
     alpha: `float`
@@ -40,6 +40,9 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
     max_iter: `int`, optional (default: 200)
         Maximum iterations at which to terminate binary seach in rare
         case of non-monotonicity of covering boxes with box side length.
+    one_indexed: `bool`, optional (default: False)
+        Returns a 1-indexed result (e.g., R or Matlab indexing), instead
+        of a 0-indexed result (e.g., Python or C indexing).
     verbose: `bool` or `int`, optional (default: 0)
         When `True` or not equal to 0, prints logging output.
 
@@ -57,7 +60,10 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
         raise ValueError('Cannot sample {} elements from {} elements '
                          'without replacement'.format(N, n_samples))
     if not replace and N == n_samples:
-        return range(N)
+        if one_indexed:
+            return list(np.array(range(N)) + 1)
+        else:
+            return list(range(N))
     if k == 'auto':
         if replace:
             k = int(np.sqrt(n_samples))
@@ -83,7 +89,7 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
     unit = (low_unit + high_unit) / 4.
 
     d_to_argsort = {}
-    
+
     n_iter = 0
     while True:
 
@@ -96,7 +102,7 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
         for d in range(n_features):
             if X_ptp[d] <= unit:
                 continue
-                
+
             points_d = X[:, d]
             if d not in d_to_argsort:
                 d_to_argsort[d] = np.argsort(points_d)
@@ -120,7 +126,7 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
 
         if verbose:
             log('Found {} non-empty grid cells'.format(len(grid)))
-            
+
         if len(grid) > k * (1 + alpha):
             # Too many grid cells, increase unit.
             low_unit = unit
@@ -128,7 +134,7 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
                 unit *= 2.
             else:
                 unit = (unit + high_unit) / 2.
-            
+
             if verbose:
                 log('Grid size {}, increase unit to {}'
                     .format(len(grid), unit))
@@ -140,7 +146,7 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
                 unit /= 2.
             else:
                 unit = (unit + low_unit) / 2.
-                
+
             if verbose:
                 log('Grid size {}, decrease unit to {}'
                     .format(len(grid), unit))
@@ -150,7 +156,7 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
         if high_unit is not None and low_unit is not None and \
            high_unit - low_unit < 1e-20:
             break
-        
+
         n_iter += 1
         if n_iter >= max_iter:
             # Should rarely get here.
@@ -177,6 +183,9 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
                 del grid[grid_cell]
         gs_idx.append(sample)
 
+    if one_indexed:
+        gs_idx = [ idx + 1 for idx in gs_idx ]
+
     return sorted(gs_idx)
 
 def gs_grid(X, N, k='auto', seed=None, replace=False,
@@ -198,7 +207,7 @@ def gs_grid(X, N, k='auto', seed=None, replace=False,
     X /= X.max()
 
     low_unit, high_unit = 0., np.max(X)
-    
+
     unit = (low_unit + high_unit) / 4.
 
     n_iter = 0
@@ -215,7 +224,7 @@ def gs_grid(X, N, k='auto', seed=None, replace=False,
             if verbose > 1:
                 if sample_idx % 10000 == 0:
                     log('sample_idx = {}'.format(sample_idx))
-            
+
             sample = X[sample_idx, :]
 
             grid_cell = tuple(np.floor(sample / unit_d).astype(int))
@@ -226,7 +235,7 @@ def gs_grid(X, N, k='auto', seed=None, replace=False,
 
         if verbose:
             log('Found {} non-empty grid cells'.format(len(grid)))
-            
+
         if len(grid) > k * (1 + alpha):
             # Too many grid cells, increase unit.
             low_unit = unit
@@ -234,7 +243,7 @@ def gs_grid(X, N, k='auto', seed=None, replace=False,
                 unit *= 2.
             else:
                 unit = (unit + high_unit) / 2.
-            
+
             if verbose:
                 log('Grid size {}, increase unit to {}'
                     .format(len(grid), unit))
@@ -246,7 +255,7 @@ def gs_grid(X, N, k='auto', seed=None, replace=False,
                 unit /= 2.
             else:
                 unit = (unit + low_unit) / 2.
-                
+
             if verbose:
                 log('Grid size {}, decrease unit to {}'
                     .format(len(grid), unit))
@@ -256,7 +265,7 @@ def gs_grid(X, N, k='auto', seed=None, replace=False,
         if high_unit is not None and low_unit is not None and \
            high_unit - low_unit < 1e-20:
             break
-        
+
         if n_iter >= max_iter:
             # Should rarely get here.
             sys.stderr.write('WARNING: Max iterations reached, try increasing '
@@ -266,7 +275,7 @@ def gs_grid(X, N, k='auto', seed=None, replace=False,
 
     if verbose:
         log('Found {} grid cells'.format(len(grid)))
-                
+
     valid_grids = set()
     gs_idx = []
     for n in range(N):
@@ -317,7 +326,7 @@ def pc_pick(X, N, seed=None, replace=False, prenormalized=False):
 
 def srs_positive_annoy(X, N, seed=None, replace=False, prenormalized=False):
     from annoy import AnnoyIndex
-    
+
     n_samples, n_features = X.shape
 
     if not replace and N > n_samples:
@@ -341,7 +350,7 @@ def srs_positive_annoy(X, N, seed=None, replace=False, prenormalized=False):
             if i not in srs_idx:
                 aindex.add_item(i, X[i, :])
         aindex.build(10)
-        
+
         Phi_i = np.random.normal(size=(n_features))
         Phi_i /= np.linalg.norm(Phi_i)
 
@@ -353,13 +362,13 @@ def srs_positive_annoy(X, N, seed=None, replace=False, prenormalized=False):
 def gs_exact(X, N, k='auto', seed=None, replace=False,
              tol=1e-3, n_iter=300, verbose=1):
     ge_idx = gs(X, N, replace=replace)
-    
+
     dist = pairwise_distances(X, n_jobs=-1)
-    
+
     cost = dist.max()
 
     iter_i = 0
-    
+
     while iter_i < n_iter:
 
         if verbose:
@@ -438,7 +447,7 @@ def uniform(X, N, seed=None, replace=False):
 
     if not seed is None:
         np.random.seed(seed)
-        
+
     return list(np.random.choice(n_samples, size=N, replace=replace))
 
 def kmeans(X, N, seed=None, replace=False, init='random'):
@@ -453,7 +462,7 @@ def kmeans(X, N, seed=None, replace=False, init='random'):
         if cluster not in louv:
             louv[cluster] = []
         louv[cluster].append(i)
-    
+
     lv_idx = []
     for n in range(N):
         louv_cells = list(louv.keys())
@@ -476,11 +485,11 @@ def louvain1(X, N, seed=None, replace=False):
 
 def louvain3(X, N, seed=None, replace=False):
     return louvain(X, N, resolution=3, seed=seed, replace=replace)
-    
+
 def louvain(X, N, resolution=1, seed=None, replace=False):
     from anndata import AnnData
     import scanpy.api as sc
-    
+
     adata = AnnData(X=X)
     sc.pp.neighbors(adata, use_rep='X')
     sc.tl.louvain(adata, resolution=resolution, key_added='louvain')
@@ -491,7 +500,7 @@ def louvain(X, N, resolution=1, seed=None, replace=False):
         if cluster not in louv:
             louv[cluster] = []
         louv[cluster].append(i)
-    
+
     lv_idx = []
     for n in range(N):
         louv_cells = list(louv.keys())
@@ -505,7 +514,7 @@ def louvain(X, N, resolution=1, seed=None, replace=False):
         lv_idx.append(sample)
 
     return lv_idx
-    
+
 def label(X, sites, site_labels, approx=True):
     if approx:
         return label_approx(X, sites, site_labels)
@@ -531,7 +540,7 @@ def label_exact(X, sites, site_labels):
 
 def label_approx(X, sites, site_labels, k=1):
     from annoy import AnnoyIndex
-    
+
     assert(X.shape[1] == sites.shape[1])
 
     # Build index over site points.
@@ -551,5 +560,5 @@ def label_approx(X, sites, site_labels, k=1):
             site_labels[ns] for ns in nearest_sites
         ]).most_common(1)[0][0]
         labels.append(label)
-        
+
     return np.array(labels)
