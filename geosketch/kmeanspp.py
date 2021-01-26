@@ -1,4 +1,4 @@
-from sklearn.cluster.k_means_ import *
+from sklearn.cluster._kmeans import *
 
 def kmeanspp(X, n_clusters, seed=None, replace=False,
              n_local_trials=1):
