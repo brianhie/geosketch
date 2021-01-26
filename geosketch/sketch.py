@@ -488,7 +488,7 @@ def louvain3(X, N, seed=None, replace=False):
 
 def louvain(X, N, resolution=1, seed=None, replace=False):
     from anndata import AnnData
-    import scanpy.api as sc
+    import scanpy as sc
 
     adata = AnnData(X=X)
     sc.pp.neighbors(adata, use_rep='X')
