@@ -29,7 +29,7 @@ def reduce_dimensionality(X, method='svd', dimred=DIMRED, raw=False):
         highest_disp_idx = np.argsort(disp)[::-1][:dimred]
         return X[:, highest_disp_idx].toarray()
     else:
-        sys.stderr.write('ERROR: Unknown method {}.'.format(svd))
+        sys.stderr.write('ERROR: Unknown method {}.'.format(method))
         exit(1)
 
 def dispersion(X, eps=1e-10):
