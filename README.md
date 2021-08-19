@@ -44,10 +44,10 @@ X_sketch = X_dimred[sketch_index]
 
 ### Data set download
 
-All of the data used in our study can be downloaded from http://geosketch.csail.mit.edu/data.tar.gz. Download and unpack this data with the command:
+All of the data used in our study can be downloaded from http://cb.csail.mit.edu/cb/geosketch/data.tar.gz. Download and unpack this data with the command:
 
 ```
-wget http://geosketch.csail.mit.edu/data.tar.gz
+wget http://cb.csail.mit.edu/cb/geosketch/data.tar.gz
 tar xvf data.tar.gz
 ```
 
