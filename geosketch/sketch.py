@@ -80,7 +80,7 @@ def gs_gap(X, N, k='auto', seed=None, replace=False,
     X /= X.max()
 
     # Find max value along each dimension.
-    X_ptp = X.ptp(0)
+    X_ptp = np.ptp(X, 0)
 
     # Range for binary search.
     low_unit, high_unit = 0., max(X_ptp)
